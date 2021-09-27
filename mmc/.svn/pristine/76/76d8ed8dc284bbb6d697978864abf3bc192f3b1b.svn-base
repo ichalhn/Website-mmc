@@ -1,0 +1,379 @@
+<?php
+  $this->load->view('layout/header.php');
+?>
+<script type='text/javascript'>
+  //-----------------------------------------------Data Table
+  $(document).ready(function() {
+    $('#example').DataTable();
+    
+  });
+
+  
+  function edit_obat(id_obat) {
+    $.ajax({
+      type:'POST',
+      dataType: 'json',
+      url:"<?php echo base_url('master/mcobat/get_data_edit_obat')?>",
+      data: {
+        id_obat: id_obat
+      },
+      success: function(data){
+        $('#edit_id_obat').val(data[0].id_obat);
+        $('#edit_id_obat_hidden').val(data[0].id_obat);
+        $('#edit_nm_obat').val(data[0].nm_obat);
+        $('#edit_satuank').val(data[0].satuank);
+        $('#edit_satuanb').val(data[0].satuanb);
+        $('#edit_faktorsatuan').val(data[0].faktorsatuan);
+        $('#edit_hargabeli').val(data[0].hargabeli);
+        $('#edit_hargajual').val(data[0].hargajual);
+        $('#edit_kel').val(data[0].kel);
+        $('#edit_tgl_kadaluarsa').val(data[0].tgl_kadaluarsa);
+      },
+      error: function(){
+        alert("error");
+      }
+    });
+  }
+
+
+</script>
+<section class="content-header">
+  <?php
+    echo $this->session->flashdata('success_msg');
+  ?>
+</section>
+
+<section class="content">
+  <div class="row" id="row">
+    <div class="col-xs-12">
+      <div class="box">
+        <div class="box-header">
+          <h3 class="box-title">DAFTAR OBAT</h3>
+        </div>
+        <div class="box-body ">
+          <div class="col-xs-3">
+            <div class="input-group">
+              <span class="input-group-btn">
+                <a href="<?php echo site_url('master/mcobat/kebijakan'); ?>" class="btn btn-primary btn-md">Tabel Kebijakan Obat</a>
+              </span>
+            </div><!-- /input-group --> 
+          </div><!-- /col-lg-6 -->
+
+          <div class="col-xs-6">
+          </div><!-- /col-lg-3 -->
+
+          <?php echo form_open('master/mcobat/insert_obat');?>
+          <div class="col-xs-3" align="right">
+            <div class="input-group">
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">Tambah Obat Baru</button>
+              </span>
+            </div><!-- /input-group --> 
+          </div><!-- /col-lg-6 -->
+
+          <!-- Modal Insert Obat -->
+          <div class="modal fade" id="myModal" role="dialog" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-success">
+
+              <!-- Modal content-->
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal">&times;</button>
+                  <h4 class="modal-title">Tambah Obat Baru</h4>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_nama">Nama Obat</p>
+                    <div class="col-sm-6">
+                      <input type="text" class="form-control" name="nm_obat" id="nm_obat">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_nama">Satuan Kecil</p>
+                    <div class="col-sm-6">
+                      <select id="satuank" class="form-control" name="satuank" required>
+                        <option value="" disabled selected="">-Pilih Satuan Kecil-</option>
+                        <?php 
+                          foreach($satuan as $row){
+                            echo '<option value="'.$row->nm_satuan.'">'.$row->nm_satuan.'</option>';
+                          }
+                        ?>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_nama">Satuan Besar</p>
+                    <div class="col-sm-6">
+                      <select id="satuanb" class="form-control" name="satuanb" required>
+                        <option value="" disabled selected="">-Pilih Satuan Besar-</option>
+                        <?php 
+                          foreach($satuan as $row){
+                            echo '<option value="'.$row->nm_satuan.'">'.$row->nm_satuan.'</option>';
+                          }
+                        ?>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_alamat">Faktor Satuan</p>
+                    <div class="col-sm-6">
+                      <input type="text" class="form-control" name="faktorsatuan" id="faktorsatuan">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_alamat">Harga Beli</p>
+                    <div class="col-sm-6">
+                      <input type="number" class="form-control" name="hargabeli" id="hargabeli" min="0">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_alamat">Harga Jual</p>
+                    <div class="col-sm-6">
+                      <input type="number" class="form-control" name="hargajual" id="hargajual" min="0">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_alamat">Kelompok</p>
+                    <div class="col-sm-6">
+                      <select id="kel" class="form-control" name="kel" required>
+                        <option value="" disabled selected="">-Pilih Kelompok-</option>
+                        <?php 
+                          foreach($kelompok as $row){
+                            echo '<option value="'.$row->nm_satuan.'">'.$row->nm_satuan.'</option>';
+                          }
+                        ?>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_tgl_kadaluarsa">Tanggal Kadaluarsa</p>
+                    <div class="col-sm-4">
+                      <input type="text" id="tgl_kadaluarsa" class="form-control" name="tgl_kadaluarsa" required>
+                      *yyyy-mm-dd
+                      <br>Tahun-Bulan-Tanggal
+                    </div>
+                  </div>
+
+                </div>
+                <div class="modal-footer">
+                  <input type="hidden" class="form-control" value="<?php echo $user_info->username;?>" name="xuser">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  <button class="btn btn-primary" type="submit">Insert Obat</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <?php echo form_close();?>
+          <br/> 
+          <br/> 
+
+          <table id="example" class="display" cellspacing="0" width="100%">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Harga Beli</th>
+                <th>Harga Jual</th>
+                <th>Tanggal Kadaluarsa</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tfoot>
+              <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Harga Beli</th>
+                <th>Harga Jual</th>
+                <th>Tanggal Kadaluarsa</th>
+                <th>Aksi</th>
+              </tr>
+            </tfoot>
+            <tbody id="bodyt">
+              <?php
+                  $i=1;
+                  foreach($obat as $row){
+              ?>
+              <tr>
+                <td><?php echo $i++;?></td>
+                <td><?php echo $row->nm_obat;?></td>
+                <td><?php echo $row->hargabeli;?></td>
+                <td><?php echo $row->hargajual;?></td>
+                <td>
+                <?php 
+                  $date1 = new DateTime();
+                  $date2 = new DateTime($row->tgl_kadaluarsa);  
+                  $diff = $date1->diff($date2); 
+                  $tahun = $diff->format('%y'); 
+                  $bulan = $diff->format('%m'); 
+                  $hari = $diff->format('%d');
+                  if($hari==0 && $bulan==0 && $tahun==0){
+                    echo "
+                          <button type='button' class='btn-danger btn-xs' disabled>
+                          <h6><i class='icon fa fa-ban'></i> Mohon Isi Tanggal Kadaluarsa</h6>
+                          </button>
+                        ";
+                  } else if($bulan<1 && $tahun==0){
+                    echo "
+                          <button type='button' class='btn-danger btn-xs' disabled>
+                          <h6><i class='icon fa fa-ban'></i> ".$hari." Hari lagi, tgl ".$row->tgl_kadaluarsa."</h6>
+                          </button>
+                        ";
+                  } else if($bulan<6 && $tahun==0){
+                    echo "
+                          <button type='button' class='btn-warning btn-xs' disabled>
+                          <h6><i class='icon fa fa-warning'></i> ".$bulan." Bulan lagi, tgl ".$row->tgl_kadaluarsa."</h6>
+                          </button>
+                        ";
+                  } else if($bulan>=6 || $tahun>=1){
+                    echo "
+                          <button type='button' class='btn-success btn-xs' disabled>
+                          <h6><i class='icon fa fa-check'></i> Lebih dari 6 Bulan, tgl  ".$row->tgl_kadaluarsa."</h6>
+                          </button>
+                        ";
+                  } else {
+                    echo "
+                          <button type='button' class='btn-danger btn-xs' disabled>
+                          <h6><i class='icon fa fa-ban'></i> Obat Sudah Kadaluarsa</h6>
+                          </button>
+                        ";
+                  }
+                  //echo $tahun." ".$bulan." ".$hari;
+                  
+                ?>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#editModal" onclick="edit_obat('<?php echo $row->id_obat;?>')"><h6>Edit Obat</h6></button>
+                </td>
+              </tr>
+              <?php } ?>
+            </tbody>
+          </table>
+
+          <?php echo form_open('master/mcobat/edit_obat');?>
+          <!-- Modal Edit Obat -->
+          <div class="modal fade" id="editModal" role="dialog" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-success">
+
+              <!-- Modal content-->
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal">&times;</button>
+                  <h4 class="modal-title">Edit Obat</h4>
+                </div>
+                <div class="modal-body">
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Id Obat</p>
+                    <div class="col-sm-6">
+                      <input type="text" class="form-control" name="edit_id_obat" id="edit_id_obat" disabled="">
+                      <input type="hidden" class="form-control" name="edit_id_obat_hidden" id="edit_id_obat_hidden">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Nama Obat</p>
+                    <div class="col-sm-6">
+                      <input type="text" class="form-control" name="edit_nm_obat" id="edit_nm_obat">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Satuan Kecil</p>
+                    <div class="col-sm-6">
+                      <select id="edit_satuank" class="form-control" name="edit_satuank" required>
+                        <option value="" disabled selected="">-Pilih Satuan Kecil-</option>
+                        <?php 
+                          foreach($satuan as $row){
+                            echo '<option value="'.$row->nm_satuan.'">'.$row->nm_satuan.'</option>';
+                          }
+                        ?>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Satuan Besar</p>
+                    <div class="col-sm-6">
+                      <select id="edit_satuanb" class="form-control" name="edit_satuanb" required>
+                        <option value="" disabled selected="">-Pilih Satuan Besar-</option>
+                        <?php 
+                          foreach($satuan as $row){
+                            echo '<option value="'.$row->nm_satuan.'">'.$row->nm_satuan.'</option>';
+                          }
+                        ?>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Faktor Satuan</p>
+                    <div class="col-sm-6">
+                      <input type="text" class="form-control" name="edit_faktorsatuan" id="edit_faktorsatuan">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Harga Beli</p>
+                    <div class="col-sm-6">
+                      <input type="number" class="form-control" name="edit_hargabeli" id="edit_hargabeli" min="0">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Harga Jual</p>
+                    <div class="col-sm-6">
+                      <input type="number" class="form-control" name="edit_hargajual" id="edit_hargajual" min="0">
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label">Kelompok</p>
+                    <div class="col-sm-6">
+                      <select id="edit_kel" class="form-control" name="edit_kel" required>
+                        <option value="" disabled selected="">-Pilih Kelompok-</option>
+                        <?php 
+                          foreach($kelompok as $row){
+                            echo '<option value="'.$row->nm_satuan.'">'.$row->nm_satuan.'</option>';
+                          }
+                        ?>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group row">
+                    <div class="col-sm-1"></div>
+                    <p class="col-sm-3 form-control-label" id="lbl_edit_tgl_kadaluarsa">Tanggal Kadaluarsa</p>
+                    <div class="col-sm-4">
+                      <input type="text" id="edit_tgl_kadaluarsa" class="form-control" name="edit_tgl_kadaluarsa" required>
+                      *yyyy-mm-dd
+                      <br>Tahun-Bulan-Tanggal
+                    </div>
+                  </div>
+
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  <button class="btn btn-primary" type="submit">Edit Obat</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <?php echo form_close();?>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<?php
+  $this->load->view('layout/footer.php');
+?>

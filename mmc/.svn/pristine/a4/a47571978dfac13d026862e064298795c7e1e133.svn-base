@@ -1,0 +1,260 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+require_once(APPPATH.'controllers/Secure_area.php');
+class Frmcpo extends Secure_area
+{
+  public function __construct(){
+  parent::__construct();
+  $this->load->model('logistik_farmasi/Frmmpo','',TRUE);
+  $this->load->model('master/Mmobat','',TRUE);
+  $this->load->helper('pdf_helper');
+  }
+  
+	function index()
+	{
+		$data['title'] = 'Monitoring PO Farmasi';
+		$data['select_pemasok'] = $this->Frmmpo->get_suppliers();
+		$this->load->view('logistik_farmasi/Frmvpo',$data);
+	}
+	
+	function form()
+	{
+		$data['title'] = 'Form PO Farmasi';
+		$data['select_pemasok'] = $this->Frmmpo->get_suppliers();
+        $data['data_obat']=$this->Mmobat->get_all_obat()->result();
+		$this->load->view('logistik_farmasi/Frmvaddpo',$data);
+	}
+	
+    function save(){	
+    	// print_r( $this->input->post() );
+		$id_po = $this->Frmmpo->insert($this->input->post()) ;
+		if ( $id_po != '' ){
+			$msg = 	' <div class="alert alert-success alert-dismissable">
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+						<i class="icon fa fa-check"></i>Data PO berhasil disimpan
+					  </div>';
+		}else{				
+			$msg = 	' <div class="alert alert-danger alert-dismissable">
+						<button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+						<i class="icon fa fa-ban"></i>Data PO gagal disimpan
+					  </div>';
+		}
+		$this->session->set_flashdata('alert_msg', $msg);
+		$this->cetak_faktur($id_po);
+		$this->session->set_flashdata('cetak', 'cetak('.$id_po.');');
+		redirect('logistik_farmasi/Frmcpo/form');
+		
+  }
+  
+	public function get_satuan_obat(){
+		$data = $this->Frmmpo->get($this->input->post('id'));
+		echo $data->satuank;
+	}
+	
+	public function auto_no_po(){
+		$keyword = $this->uri->segment(4);
+		$data = $this->db->from('header_po')->like('no_po',$keyword)->limit(12, 0)->get()->result();	
+
+		foreach($data as $row)
+		{
+			$arr['query'] = $keyword;
+			$arr['suggestions'][] = array(
+				'value'	=>$row->no_po,
+				'id' => $row->id_po
+			);
+		}
+		// minimal PHP 5.2
+		echo json_encode($arr);
+	}
+	
+    function get_info(){
+		$id = $this->input->post('id');
+		echo json_encode($this->Frmmpo->get_info($id));
+		//echo json_encode($this->Frmmpo->get_header_po($id)->row());
+    }
+    function get_po_list(){		
+		//print_r($this->input->post());
+		$line  = array();
+		$line2 = array();
+		$row2  = array();
+		if(sizeof($_POST)==0) {
+			$line['data'] = $line2;
+		}else{		
+			$hasil = $this->Frmmpo->get_po_list($this->input->post());
+			/*$line['data'] = $hasil;*/			
+			foreach ($hasil as $value) {
+				$row2['id_po'] = $value->id_po;
+				$row2['no_po'] = $value->no_po;
+				$row2['tgl_po'] = $value->tgl_po;
+				$row2['company_name'] = $value->company_name;
+				//$row2['supplier'] = $value->company_name;
+				$row2['sumber_dana'] = $value->sumber_dana;
+				$row2['user'] = $value->user;
+
+				//$row2['no_faktur'] = $value->no_faktur;
+				if ($value->open > 0)
+					$row2['status'] = '<font color="red">Open</font>';
+				else
+					$row2['status'] = '<font color="green">Closed</font>';
+				$row2['aksi'] = '<center>
+				<button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#detailModal" data-id="'.$value->id_po.'" data-no="'.$value->no_po.'" data-open="'.$value->open.'">Detail</button> 
+							</center>';
+							
+				$line2[] = $row2;
+			}
+			$line['data'] = $line2;
+			
+		}
+		echo json_encode($line);
+    }
+    function get_detail_list(){		
+		$line  = array();
+		$line2 = array();
+		$row2  = array();
+		$hasil = $this->Frmmpo->get_po_detail_list($this->input->post('id'));
+		
+		foreach ($hasil as $value) {
+			$row2['item_id'] = $value->item_id;
+			$row2['description'] = $value->description;
+			$row2['satuank'] = $value->satuank;
+			$row2['qty_po'] = $value->qty;
+			$row2['qty_beli'] = $value->qty_beli;
+			$row2['batch_no'] = $value->batch_no;
+			$row2['keterangan'] = $value->keterangan;	
+			$row2['expire_date'] = $value->expire_date;
+			$line2[] = $row2;
+		}
+		$line['data'] = $line2;
+			
+		echo json_encode($line);
+    }
+	public function cetak_faktur($id_po){
+		date_default_timezone_set("Asia/Bangkok");
+		$tgl_jam = date("d-m-Y H:i:s");
+		$tgl = date("d-m-Y");
+
+		  $namars=$this->config->item('namars');
+		  $kota_kab=$this->config->item('kota_kab');
+		  $alamatrs=$this->config->item('alamat');
+		  $telp=$this->config->item('kota');
+	   
+		//$data_detail_amprah=$this->Frmmamprah->get_receivings($no_faktur_amp)->result();
+		$data1=$this->Frmmpo->get_info($id_po);
+		$data = json_decode(json_encode($data1), true);
+		/*
+		 $data['select_gudang']=$this->Frmmamprah->cari_gudang()->result();
+		*/  
+
+		$konten="<table style=\"padding:0px;\" border=\"0\">
+						<tr>
+							<td width=\"16%\">
+								<p align=\"center\">
+									<img src=\"asset/images/logos/".$this->config->item('logo_url')."\" alt=\"img\" height=\"40\" style=\"padding-right:5px;\">
+								</p>
+							</td>
+								<td  width=\"70%\" style=\" font-size:9px;\"><b><font style=\"font-size:12px\">$namars</font></b><br>$alamatrs $kota_kab $telp
+							</td>
+							<td width=\"14%\"><font size=\"6\" align=\"right\">$tgl_jam</font></td>						
+						</tr>
+					</table>
+				  <hr/>
+				  <p align=\"center\"><b>
+				  SURAT PESANAN<br/>
+				  No. PO. ".$id_po."
+				  </b></p><br/>
+				 
+				  <table>
+					<tr>
+					  <td width=\"15%\"><b>Tgl PO</b></td>
+					  <td width=\"3%\"> : </td>
+					  <td width=\"25%\">".$data['tgl_po']."</td>
+					</tr>
+					<tr>
+					  <td width=\"15%\"><b>Supplier</b></td>
+					  <td width=\"3%\"> : </td>
+					  <td width=\"60%\">".$data['company_name']."</td>
+					</tr>
+					<tr>
+					  <td><b>Untuk Permintaan</b></td>
+					  <td> : </td>
+					</tr>
+				  </table>
+				  <br/><br/>
+				  <table>
+					<tr><hr>
+					  <th width=\"5%\"><b>No</b></th>
+					  <th width=\"45%\"><b>Nama Item</b></th>
+					  <th width=\"10%\"><b>Qty</b></th>
+					  <th width=\"10%\"><b>Satuan</b></th>
+					</tr>";
+		
+		$data_detail_po=$this->Frmmpo->get_po_detail_list($id_po);
+		foreach($data_detail_po as $key=>$row){
+			$konten = $konten . "
+					<tr>
+						<td>".($key+1)."</td>
+						<td>".$row->description."</td>
+						<td>".$row->qty."</td>
+						<td>".$row->satuank."</td>
+					</tr>";
+		}
+		$konten = $konten ."
+					<hr>
+		  </table>
+		  <br><br><br>
+		  <table border=\"0\">
+		  			<tr>
+		  			  <td width=\"30%\"></td>
+		  			  <td width=\"30%\"></td>
+					  <td width=\"40%\"></td>
+					</tr>
+		  			<tr>
+		  			  <td width=\"30%\"></td>
+		  			  <td width=\"30%\"></td>
+					  <td width=\"40%\" align=\"right\">Cilandak, ___ ________________ 20____</td>
+					</tr>
+					<tr>
+					  <td width=\"25%\"> </td>
+					  <td width=\"25%\"> </td>
+					  <td width=\"25%\"> </td>
+					  <td width=\"25%\" align=\"center\">Apoteker<br><br><br>(__________________)</td>
+					</tr>
+		  </table>
+		  ";
+
+					  
+		$file_name="FP_$id_po.pdf";
+
+		tcpdf();
+		$obj_pdf = new TCPDF('L', PDF_UNIT, 'A5', true, 'UTF-8', false);
+		$obj_pdf->SetCreator(PDF_CREATOR);
+		$title = "";
+		$obj_pdf->SetTitle($file_name);
+		$obj_pdf->SetPrintHeader(false);
+		$obj_pdf->SetPrintFooter(false);
+		$obj_pdf->SetHeaderData('', '', $title, '');
+		$obj_pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+		$obj_pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+		$obj_pdf->SetDefaultMonospacedFont('helvetica');
+		$obj_pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+		$obj_pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+		$obj_pdf->SetMargins('10', '10', '10');
+		$obj_pdf->SetAutoPageBreak(TRUE, '5');
+		$obj_pdf->SetFont('helvetica', '', 9);
+		$obj_pdf->setFontSubsetting(false);
+		$obj_pdf->AddPage();
+		ob_start();
+		  $content = $konten;
+		ob_end_clean();
+		$obj_pdf->writeHTML($content, true, false, true, false, '');
+		$obj_pdf->Output(FCPATH.'download/logistik_farmasi/PO/'.$file_name, 'F');
+		
+	  } 
+
+	function is_exist(){	
+		$id = $this->input->post('id');
+		echo json_encode($this->Frmmpo->checkisexist($id));
+	}
+    
+}
+?>

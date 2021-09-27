@@ -1,0 +1,127 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+require_once(APPPATH.'controllers/Secure_area.php');
+include('Frmcterbilang.php');
+class Frmcpembelian_po extends Secure_area
+{
+	public function __construct(){
+		parent::__construct();
+		$this->load->model('logistik_farmasi/Frmmpo','',TRUE);
+	}
+
+	function index()
+	{
+		$data['title'] = 'Pembelian (PO Reference)';
+		$data['select_pemasok'] = $this->Frmmpo->get_suppliers();
+		$this->load->view('logistik_farmasi/Frmvpembelian_po',$data);
+	}
+	
+    function get_detail_list(){		
+		$line  = array();
+		$line2 = array();
+		$row2  = array();
+		$hasil = $this->Frmmpo->get_po_detail_list($this->input->post('id'));
+		
+		foreach ($hasil as $key =>$value) {
+			$row2['item_id'] = $value->item_id;
+			$row2['description'] = $value->description;
+			$row2['satuank'] = $value->satuank;
+			$row2['qty_po'] = $value->qty;
+			$row2['id_po'] = $value->id_po;
+			/*
+			if ($value->qty_beli == null)
+				$row2['qty_beli'] = '<input type="hidden" value="'.$value->id.'" id="id" name="id"><input type="number" id="qty_beli'.($key+1).'" name="qty_beli" min=0 >';
+			else
+				$row2['qty_beli'] = $value->qty_beli;
+			if ($value->batch_no == null){
+				$row2['batch_no'] = '<input type="text" id="batch_no'.($key+1).'" name="batch_no">';	
+			}else
+				$row2['batch_no'] = $value->batch_no;
+			if ($value->keterangan == null)
+				$row2['keterangan'] = '<input type="text" id="keterangan" name="keterangan"><input type="hidden" value="'.$value->item_id.'" name="id_obat">';
+			else
+				$row2['keterangan'] = $value->keterangan;	
+			if ($value->expire_date == null)
+				$row2['expire_date'] = '<input type="text" id="expire_date'.($key+1).'" name="expire_date" class="datepicker" placeholder="yyyy-mm-dd">';
+			else
+				$row2['expire_date'] = $value->expire_date;	
+			*/
+			$line2[] = $row2;
+		}
+		$line['data'] = $line2;
+			
+		echo json_encode($line);
+    }
+	function get_detail_beli(){		
+		$line  = array();
+		$line2 = array();
+		$row2  = array();
+		$value2 = $this->Frmmpo->get_total_beli($this->input->post());
+		$total_qty_beli = $value2->total_qty_beli;
+		$kuota = $value2->kuota;
+		$description = $value2->description;
+		$qty = $value2->qty;
+		$satuank = $value2->satuank;
+		$open = $value2->open;
+		$hasil = $this->Frmmpo->get_po_detail_beli($this->input->post());
+		
+		foreach ($hasil as $value) {
+			$row2['qty_beli'] = $value->qty_beli;
+			$row2['batch_no'] = $value->batch_no;
+			$row2['expire_date'] = $value->expire_date;
+			$row2['aksi'] = '';
+			//$row2['aksi'] = '<button class="btn btn-xs btn-warning" id="btnHapus" onClick="hapusBeli('.$value->id.')">Hapus</button>';
+			/*
+			if ($value->qty_beli == null)
+				$row2['qty_beli'] = '<input type="hidden" value="'.$value->id.'" id="id" name="id"><input type="number" id="qty_beli'.($key+1).'" name="qty_beli" min=0 >';
+			else
+				$row2['qty_beli'] = $value->qty_beli;
+			if ($value->batch_no == null){
+				$row2['batch_no'] = '<input type="text" id="batch_no'.($key+1).'" name="batch_no">';	
+			}else
+				$row2['batch_no'] = $value->batch_no;
+			if ($value->keterangan == null)
+				$row2['keterangan'] = '<input type="text" id="keterangan" name="keterangan"><input type="hidden" value="'.$value->item_id.'" name="id_obat">';
+			else
+				$row2['keterangan'] = $value->keterangan;	
+			if ($value->expire_date == null)
+				$row2['expire_date'] = '<input type="text" id="expire_date'.($key+1).'" name="expire_date" class="datepicker" placeholder="yyyy-mm-dd">';
+			else
+				$row2['expire_date'] = $value->expire_date;	
+			*/
+			$line2[] = $row2;
+		}
+		if ($kuota>0 and $open==1){
+			$row2['qty_beli'] = '<input type="number" id="qty_beli" name="qty_beli" style="width:100%" min=0 max='.$kuota.' >';
+			$row2['batch_no'] = '<input type="text" id="batch_no" name="batch_no">';
+			$row2['expire_date'] ='<input type="text" id="expire_date" name="expire_date" placeholder="yyyy-mm-dd">
+			<input type="hidden" value="'.$description.'" id="description"><input type="hidden" value="'.$satuank.'" id="satuank"><input type="hidden" value="'.$qty.'" id="qty">';
+			$row2['aksi'] = '<button class="btn btn-xs btn-primary" id="btnSimpan">Simpan</button>';
+			$line2[] = $row2;
+		}
+		$line['data'] = $line2;
+			
+		echo json_encode($line);
+    }
+	
+	function save_detail_beli(){
+		$this->Frmmpo->insert_detail_beli($this->input->post()) ;
+		echo true;
+	}
+	function delete_detail_beli(){
+		$this->Frmmpo->delete_detail_beli($this->input->post('id')) ;
+		echo true;
+	}
+	function selesai_po(){
+		$this->Frmmpo->selesai_po($this->input->post('id_po')) ;
+		redirect('logistik_farmasi/Frmcpembelian_po');
+	}
+
+/*
+	function alokasi(){
+		$this->Frmmpo->update($this->input->post('json'));
+		echo true;
+	}
+	*/
+}
+?>

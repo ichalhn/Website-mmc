@@ -1,0 +1,313 @@
+<?php
+class Rjcterbilang{
+
+	public function kekata($x) {
+	    $x = abs($x);
+	    $angka = array("", "satu", "dua", "tiga", "empat", "lima",
+	    "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas");
+	    $temp = "";
+	    if ($x <12) {
+	        $temp = " ". $angka[$x];
+	    } else if ($x <20) {
+	        $temp = $this->kekata($x - 10). " belas";
+	    } else if ($x <100) {
+	        $temp = $this->kekata($x/10)." puluh". $this->kekata($x % 10);
+	    } else if ($x <200) {
+	        $temp = " seratus" . $this->kekata($x - 100);
+	    } else if ($x <1000) {
+	        $temp = $this->kekata($x/100) . " ratus" . $this->kekata($x % 100);
+	    } else if ($x <2000) {
+	        $temp = " seribu" . $this->kekata($x - 1000);
+	    } else if ($x <1000000) {
+	        $temp = $this->kekata($x/1000) . " ribu" . $this->kekata($x % 1000);
+	    } else if ($x <1000000000) {
+	        $temp = $this->kekata($x/1000000) . " juta" . $this->kekata($x % 1000000);
+	    } else if ($x <1000000000000) {
+	        $temp = $this->kekata($x/1000000000) . " milyar" . $this->kekata(fmod($x,1000000000));
+	    } else if ($x <1000000000000000) {
+	        $temp = $this->kekata($x/1000000000000) . " trilyun" . $this->kekata(fmod($x,1000000000000));
+	    }     
+	        return $temp;
+	}
+
+	public function terbilang($x, $style=4) {
+	    if($x<0) {
+	        $hasil = "minus ". trim($this->kekata($x));
+	    } else {
+	        $hasil = trim($this->kekata($x));
+	    }     
+	    switch ($style) {
+	        case 1:
+	            $hasil = strtoupper($hasil);
+	            break;
+	        case 2:
+	            $hasil = strtolower($hasil);
+	            break;
+	        case 3:
+	            $hasil = ucwords($hasil);
+	            break;
+	        default:
+	            $hasil = ucfirst($hasil);
+	            break;
+	    }     
+	    return $hasil;
+	}
+
+	// //////////////////////////////////////////////////////////////////////////
+	// public function satuan($inp)
+	// {
+	// 	if ($inp == 1)
+	// 	{
+	// 		return "satu ";
+	// 	}
+	// 	else if ($inp == 2)
+	// 	{
+	// 		return "dua ";
+	// 	}
+	// 	else if ($inp == 3)
+	// 	{
+	// 		return "tiga ";
+	// 	}
+	// 	else if ($inp == 4)
+	// 	{
+	// 		return "empat ";
+	// 	}
+	// 	else if ($inp == 5)
+	// 	{
+	// 		return "lima ";
+	// 	}
+	// 	else if ($inp == 6)
+	// 	{
+	// 		return "enam ";
+	// 	}
+	// 	else if ($inp == 7)
+	// 	{
+	// 		return "tujuh ";
+	// 	}
+	// 	else if ($inp == 8)
+	// 	{
+	// 		return "delapan ";
+	// 	}
+	// 	else if ($inp == 9)
+	// 	{
+	// 		return "sembilan ";
+	// 	}
+	// 	else
+	// 	{
+	// 		return "";
+	// 	}
+	// }
+
+	// public function belasan($inp)
+	// {
+	// 	$proses = $inp; //substr($inp, -1);
+	// 	if ($proses == '11')
+	// 	{
+	// 		return "sebelas ";
+	// 	}
+	// 	else
+	// 	{
+	// 		$proses = substr($proses,1,1);
+	// 		return $this->satuan($proses)."belas ";
+	// 	}
+	// }
+
+	// public function puluhan($inp)
+	// {
+	// 	$proses = $inp; //substr($inp, 0, -1);
+	// 	if ($proses == 1)
+	// 	{
+	// 		return "sepuluh ";
+	// 	}
+	// 	else if ($proses == 0)
+	// 	{
+	// 		return '';
+	// 	}
+	// 	else
+	// 	{
+	// 		return $this->satuan($proses)."puluh ";
+	// 	}
+	// }
+
+	// public function ratusan($inp)
+	// {
+	// 	$proses = $inp; //substr($inp, 0, -2);
+	// 	if ($proses == 1)
+	// 	{
+	// 		return "seratus ";
+	// 	}
+	// 	else if ($proses == 0)
+	// 	{
+	// 		return '';
+	// 	}
+	// 	else
+	// 	{
+	// 		return $this->satuan($proses)."ratus ";
+	// 	}
+	// }
+
+	// public function ribuan($inp,$ket='')
+	// {
+	// 	$proses = $inp; //substr($inp, 0, -3);
+	// 	if ($proses == 1)
+	// 	{
+	// 		if($ket==1){//kemungkinan 101.000 biar ga seribu
+	// 			return $this->satuan($proses)."juta ";
+	// 		}else{
+	// 			return "seribu ";
+	// 		}
+	// 	}
+	// 	else if ($proses == 0)
+	// 	{
+	// 		return '';
+	// 	}
+	// 	else
+	// 	{
+	// 		return $this->satuan($proses)."ribu ";
+	// 	}
+	// }
+
+	// public function jutaan($inp)
+	// {
+	// 	$proses = $inp; //substr($inp, 0, -6);
+	// 	if ($proses == 0)
+	// 	{
+	// 		return '';
+	// 	}
+	// 	else
+	// 	{
+	// 		return $this->satuan($proses)."juta ";
+	// 	}
+	// }
+
+	// public function milyaran($inp)
+	// {
+	// 	$proses = $inp; //substr($inp, 0, -9);
+	// 	if ($proses == 0)
+	// 	{
+	// 		return '';
+	// 	}
+	// 	else
+	// 	{
+	// 		return $this->satuan($proses)."milyar ";
+	// 	}
+	// }
+
+	// public function terbilang($rp)
+	// {
+	// 	$kata = "";
+	// 	$rp = trim($rp);
+	// 	if (strlen($rp) >= 10)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-10, -9);
+	// 		$kata = $kata.$this->milyaran($angka);
+	// 	}
+	// 	$tambahan = "";
+	// 	if (strlen($rp) >= 9)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-9, -8);
+	// 		$kata = $kata.$this->ratusan($angka);
+	// 		if ($angka > 0) { $tambahan = "juta "; }
+	// 	}
+	// 	if (strlen($rp) >= 8)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-8, -7);
+	// 		$angka1 = substr($rp, strlen($rp)-7, -6);
+	// 		if (($angka == 1) && ($angka1 > 0))
+	// 		{
+	// 			$angka = substr($rp, strlen($rp)-8, -6);
+	// 			//echo " belasan".($angka)." ";
+	// 			$kata = $kata.$this->belasan($angka)."juta ";
+	// 		}
+	// 		else
+	// 		{
+	// 			$angka = substr($rp, strlen($rp)-8, -7);
+	// 			//echo " puluhan".($angka)." ";
+	// 			$kata = $kata.$this->puluhan($angka);
+	// 			if ($angka > 0) { $tambahan = "juta "; }
+				
+	// 			$angka = substr($rp, strlen($rp)-7, -6);
+	// 			//echo " jutaan".($angka)." ";
+	// 			$kata = $kata.$this->jutaan($angka);
+	// 			if ($angka == 0) { $kata = $kata.$tambahan; }
+	// 		}	
+	// 	}
+	// 	if (strlen($rp) == 7)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-7, -6);
+	// 		$kata = $kata.$this->jutaan($angka);
+	// 		if ($angka == 0) { $kata = $kata.$tambahan; }
+	// 	}
+	// 	$tambahan = "";
+	// 	if (strlen($rp) >= 6)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-6, -5);
+	// 		$kata = $kata.$this->ratusan($angka);
+	// 		if ($angka > 0) { $tambahan = "ribu "; }
+	// 	}
+	// 	if (strlen($rp) >= 5)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-5, -4);
+	// 		$angka1 = substr($rp, strlen($rp)-4, -3);
+	// 		if (($angka == 1) && ($angka1 > 0))
+	// 		{
+	// 			$angka = substr($rp, strlen($rp)-5, -3);
+	// 			//echo " belasan".($angka)." ";
+	// 			$kata = $kata.$this->belasan($angka)."ribu ";
+	// 		}
+	// 		else
+	// 		{
+	// 			$angka = substr($rp, strlen($rp)-5, -4);
+	// 			//echo " puluhan".($angka)." ";
+	// 			$kata = $kata.$this->puluhan($angka);
+	// 			if ($angka > 0) { $tambahan = "ribu "; }
+				
+	// 			$angka = substr($rp, strlen($rp)-4, -3);
+	// 			//echo " ribuan".($angka)." ";
+	// 			$kata = $kata.$this->ribuan($angka,1);
+	// 			if ($angka == 0) { $kata = $kata.$tambahan; }
+	// 		}
+	// 	}
+	// 	if (strlen($rp) == 4)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-4, -3);
+	// 		//echo " ribuan".($angka)." ";
+	// 		$kata = $kata.$this->ribuan($angka);
+	// 		if ($angka == 0) { $kata = $kata.$tambahan; }
+	// 	}
+	// 	if (strlen($rp) >= 3)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-3, -2);
+	// 		//echo " ratusan".($angka)." ";
+	// 		$kata = $kata.$this->ratusan($angka);
+	// 	}
+	// 	if (strlen($rp) >= 2)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-2, -1);
+	// 		$angka1 = substr($rp, strlen($rp)-1);
+	// 		if (($angka == 1) && ($angka1 > 0))
+	// 		{
+	// 			$angka = substr($rp, strlen($rp)-2);
+	// 			//echo " belasan".($angka)." ";
+	// 			$kata = $kata.$this->belasan($angka);
+	// 		}
+	// 		else
+	// 		{
+	// 			//echo " puluhan".($angka)." ";
+	// 			$kata = $kata.$this->puluhan($angka);
+				
+	// 			$angka = substr($rp, strlen($rp)-1);
+	// 			//echo " satuan".($angka)." ";
+	// 			$kata = $kata.$this->satuan($angka);
+	// 		}
+	// 	}
+	// 	if (strlen($rp) == 1)
+	// 	{
+	// 		$angka = substr($rp, strlen($rp)-1);
+	// 		//echo " satuan".($angka)." ";
+	// 		$kata = $kata.$this->satuan($angka);
+	// 	}
+	// 	return $kata.' rupiah';
+	// }
+}
+?>

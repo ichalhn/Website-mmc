@@ -1,0 +1,47 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+	class Frmmretur extends CI_Model{
+		function __construct(){
+			parent::__construct();
+		}
+		
+		//daftar resep pasien
+
+		function get_daftar_retur(){
+			return $this->db->query("SELECT receiving_time, receiving_id, suppliers.company_name as supplier_id, no_faktur, payment_type from receivings, suppliers WHERE receivings.supplier_id=suppliers.person_id");
+		}
+
+		function get_daftar_retur_by_date($date){
+			return $this->db->query("SELECT receiving_time, receiving_id, suppliers.company_name as supplier_id, payment_type from receivings, suppliers WHERE receivings.supplier_id=suppliers.person_id
+										AND left(receivings.receiving_time,10)  = '$date'
+										ORDER BY receiving_time DESC");
+		}
+
+		function get_daftar_retur_by_no($key){
+			return $this->db->query("SELECT receiving_id, no_faktur, receiving_time,  suppliers.company_name as suppplier_id, payment_type from receivings , suppliers WHERE receivings.supplier_id=suppliers.person_id  AND (no_faktur='$key') GROUP BY receiving_id
+			ORDER BY receiving_time ASC");
+		}
+
+		
+		function get_data_transaksi(){
+			return $this->db->query("SELECT * FROM receivings");
+		}
+
+		function get_data_retur_by_id($receiving_id){
+			return $this->db->query("SELECT receivings_items.item_id, receivings_items.description, receivings_items.batch_no, gudang_inventory.qty as quantity_purchased from receivings_items, gudang_inventory where gudang_inventory.id_obat = receivings_items.item_id and receivings_items.receiving_id = '$receiving_id' and gudang_inventory.id_gudang = 1");
+		}
+		
+		function get_data_retur_by_batch($id_obat){
+			return $this->db->query("SELECT receivings_items.item_id, receivings_items.description, receivings_items.batch_no, gudang_inventory.qty as quantity_purchased from receivings_items, gudang_inventory where gudang_inventory.id_obat = receivings_items.item_id and gudang_inventory.id_obat = '$id_obat'");
+		}
+
+		function edit_stok($data){
+			return $this->db->query("UPDATE gudang_inventory set qty = ".$data['edit_stok_hide']." where id_obat = ".$data['edit_item_id']." and id_gudang = 1");
+		}
+
+		function insert_quantity($data){
+			return $this->db->query("UPDATE receivings_items set quantity_retur=(quantity_retur+".$data['edit_quantity'].") where item_id = ".$data['edit_item_id']." and receiving_id = ".$data['receiving_id']." and batch_no = ".$data['edit_batch_no']);
+		}
+
+	}
+?>

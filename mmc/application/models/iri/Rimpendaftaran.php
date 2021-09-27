@@ -1,0 +1,200 @@
+<?php
+class Rimpendaftaran extends CI_Model {
+
+	public function select_dokter_like($value){
+		$data=$this->db->query("select *
+			from data_dokter as a 
+			where a.nm_dokter like '%$value%' and a.nm_dokter is not null
+			order by a.nm_dokter asc
+
+			");
+		return $data->result_array();
+	}
+
+	public function select_pasien_irj_by_no_register_asal_with_diag_utama($no_register_asal){
+		$data=$this->db->query("
+
+			select *
+			from daftar_ulang_irj as a left join data_pasien as b on a.no_medrec = b.no_medrec
+			left join data_dokter as c on c.id_dokter = a.id_dokter
+			LEFT JOIN diagnosa_pasien as d on d.no_register = a.no_register
+			where a.no_register='$no_register_asal' and d.klasifikasi_diagnos = 'utama'
+			
+			");
+		return $data->result_array();
+	}
+
+	public function get_pasien_iri_exist($no_cm){
+		return $data=$this->db->query("Select count(*) as exist from pasien_iri a, data_pasien b
+where a.no_cm=b.no_medrec
+and a.tgl_keluar is null
+and a.no_cm='$no_cm'");
+	}
+
+	public function select_pasien_irj_by_no_register_asal($no_register_asal){
+		$data=$this->db->query("
+			select *
+			from daftar_ulang_irj as a inner join data_pasien as b on a.no_medrec = b.no_medrec
+			left join data_dokter as c on c.id_dokter = a.id_dokter
+			left join data_ppk as d on a.asal_rujukan = d.kd_ppk
+			left join kontraktor as e on e.id_kontraktor=a.id_kontraktor
+			where a.no_register='$no_register_asal'
+			");
+		return $data->result_array();
+	}
+
+	public function get_all_ppk(){
+		$data=$this->db->query("
+			select *
+			from data_ppk
+			order by nm_ppk asc
+			");
+		return $data->result_array();
+	}
+
+	public function get_all_kontraktor(){
+		$data=$this->db->query("
+			select *
+			from kontraktor
+			where nmkontraktor is not null or nmkontraktor <> ''
+			order by nmkontraktor asc
+			");
+		return $data->result_array();
+	}
+
+	public function get_all_smf(){
+		$data=$this->db->query("select *
+			from cara_berkunjung as a 
+			order by cara_kunj asc
+			");
+		return $data->result_array();
+	}
+
+	//upgrade price for VK
+	public function update_tindakan($kelas,$idrg,$no_ipd){
+		$data=$this->db->query("UPDATE pelayanan_iri a
+			SET a.tumuminap=(select total_tarif from tarif_tindakan where kelas='$kelas' and id_tindakan=a.id_tindakan), 
+			a.kelas='$kelas', 
+			a.vtot=(select total_tarif from tarif_tindakan where kelas='$kelas' and id_tindakan=a.id_tindakan)*a.qtyyanri,
+			a.tarifalkes=(select tarif_alkes from tarif_tindakan where kelas='$kelas' and id_tindakan=a.id_tindakan)
+			WHERE a.no_ipd='$no_ipd' and a.idrg='$idrg'
+			");
+	}
+
+	public function update_ruangan($kelas,$idrg,$no_ipd){
+		$data=$this->db->query("update ruang_iri a set a.kelas='$kelas', 
+			a.vtot=(select total_tarif from tarif_tindakan where kelas='$kelas' and id_tindakan=concat('1A',a.idrg)),
+			a.jasa_perawat=datediff(tglkeluarrg,tglmasukrg)*(select total_tarif from tarif_tindakan where kelas='$kelas' and id_tindakan=concat('1A',a.idrg))*((select persen_jasa from kelas where kelas='$kelas')/100)
+			where a.no_ipd='$no_ipd' and a.idrg='$idrg'
+			");
+	}
+
+
+	//moris up
+
+	public function select_pasien_ird_by_no_register_asal_with_diag_utama($no_register_asal){
+		$data=$this->db->query("
+			SELECT
+				a.*,b.*,c.*
+			FROM
+				irddaftar_ulang AS a
+			LEFT JOIN data_pasien AS b ON a.no_medrec = b.no_medrec
+			LEFT JOIN data_dokter AS c ON a.id_dokter = c.id_dokter
+			LEFT JOIN diagnosa_ird as d on a.no_register = d.no_register
+			WHERE
+				a.no_register = '$no_register_asal'
+				and d.klasifikasi_diagnos = 'utama'
+			");
+		return $data->result_array();
+	}
+
+	public function select_pasien_ird_by_no_register_asal($no_register_asal){
+		$data=$this->db->query("
+			select * 
+			from irddaftar_ulang as a inner join data_pasien as b on a.no_medrec = b.no_medrec
+			left join data_dokter as c on a.id_dokter = c.id_dokter
+			left join data_ppk as d on a.asal_rujukan = d.kd_ppk
+			where a.no_register='$no_register_asal'
+			");
+		return $data->result_array();
+	}
+
+	public function select_irna_antrian_by_noreservasi($value){
+		$data=$this->db->query("select *
+			from irna_antrian as a inner join ruang as b on a.ruangpilih = b.idrg
+			inner join data_pasien as c on a.no_cm = c.no_medrec
+			left join icd1 as d on a.diagnosa = d.id_icd
+			where a.noreservasi='$value'");
+		return $data->result_array();
+	}
+
+	public function update_pendaftaran_mutasi($data, $value){
+		$this->db->where('no_ipd', $value);
+		$this->db->update('pasien_iri', $data);
+	}
+
+	public function update_ruang_mutasi($data, $value){
+		$this->db->where('idrgiri', $value);
+		$this->db->update('ruang_iri', $data);
+	}
+
+	public function update_data_pasien($data, $value){
+		$this->db->where('no_medrec', $value);
+		$this->db->update('data_pasien', $data);
+	}
+
+	public function update_diagnosa1($id_icd, $no_ipd){
+		$data=$this->db->query("
+			update pasien_iri
+			set diagnosa1 = '$id_icd'
+			where no_ipd = '$no_ipd'
+			");
+	}
+
+	public function update_tgl_keluar($data, $value){
+		$data=$this->db->query("
+			update pasien_iri
+			set
+			tgl_keluar = '".$data['tgl_keluar']."'
+			where no_ipd = '".$value."'
+		");
+	}	
+
+	public function update_ruang_iri($data, $value){
+		$data=$this->db->query("update ruang_iri
+			set tglkeluarrg = '$data'
+			where no_ipd = '$value' and tglkeluarrg is null
+			");
+		//$this->db->where('no_ipd', $value);
+		//$this->db->update('ruang_iri', $data);
+	}
+	//moris up
+
+	
+	public function select_pasien_iri(){
+		$data=$this->db->query("select *from pasien_iri");
+		return $data->result_array();
+	}
+	
+	public function select_pasien_iri_by_no_register_asal($no_register_asal){
+		$data=$this->db->query("select *from pasien_iri where no_ipd='$no_register_asal'");
+		return $data->result_array();
+	}
+	
+	public function select_ruang_like($value){
+		$data=$this->db->query("select * from ruang where idrg like '%$value%'");
+		return $data->result_array();
+	}
+	
+	public function insert_pendaftaran($data){
+		return $this->db->insert('pasien_iri', $data);
+	}
+	public function insert_ruang_iri($data){
+		$this->db->insert('ruang_iri', $data);
+	}
+	public function update_irna_antrian($data, $value){
+		$this->db->where('noreservasi', $value);
+		$this->db->update('irna_antrian', $data);
+	}
+}
+?>

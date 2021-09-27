@@ -1,0 +1,106 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+  class Frmmdistribusi extends CI_Model{
+    function __construct(){
+    parent::__construct();
+  }
+
+    function get_amprah_detail_list($id){
+		return $this->db->query("SELECT DISTINCT a.id_amprah, a.id_obat, b.nm_obat, a.satuank, a.qty_req, a.id_gudang_tujuan, a.id_gudang
+			FROM distribusi a
+			LEFT JOIN master_obat b on a.id_obat = b.id_obat
+			WHERE a.id_amprah = $id")->result();
+    }
+	function get_amprah_detail_acc($data){
+		return $this->db->query("SELECT a.id, a.id_amprah, a.id_obat, a.id_gudang, a.id_gudang_tujuan, a.satuank, a.qty_req, a.qty_acc, a.expire_date, a.batch_no, a.keterangan, a.user
+			FROM distribusi a
+			WHERE a.id_amprah = '".$data["id_amprah"]."' AND a.id_obat = '".$data["id_obat"]."'
+			AND a.qty_acc IS NOT NULL AND a.batch_no IS NOT NULL AND a.expire_date IS NOT NULL")->result();
+    }
+	function get_total_acc($data){
+		return $this->db->query("SELECT id_obat, id_gudang, id_gudang_tujuan, qty_req, satuank, IFNULL(SUM(qty_acc),0) as total_qty_acc, IFNULL(MAX(qty_req),0)-IFNULL(SUM(qty_acc),0) as kuota
+			FROM distribusi a
+			WHERE a.id_amprah= '".$data["id_amprah"]."' AND a.id_obat = '".$data["id_obat"]."'")->row();
+	}
+	
+	function check_stock($id_gudang, $id_obat, $batch_no){
+		$query=$this->db->query("select count(id_inventory) as jml
+			from gudang_inventory 
+			where id_gudang = '".$id_gudang."' and id_obat = '".$id_obat."' and batch_no = '".$batch_no."'"); 
+		if($query->num_rows()==1)
+		{
+			return $query->row()->jml;
+		}
+	}
+	function get_expire_date($id_gudang, $id_obat, $batch_no){
+		$query=$this->db->query("select expire_date
+			from gudang_inventory 
+			where id_gudang = '".$id_gudang."' and id_obat = '".$id_obat."' and batch_no = '".$batch_no."'"); 
+		if($query->num_rows()==1)
+		{
+			return $query->row()->expire_date;
+		}
+	}
+    function get_amprah_detail_stock($ido, $idg){
+		return $this->db->query("SELECT batch_no, expire_date, qty
+			FROM gudang_inventory 
+			WHERE id_obat = $ido and id_gudang = $idg")->result();
+    }
+	function insert_detail_acc($data){   
+		if($data["expire_date"]==''){
+			$expire_date='NULL';
+		}else{
+			$expire_date=$data["expire_date"];
+		}
+
+		if ($this->db->query("insert into distribusi(id_amprah, id_obat, id_gudang, id_gudang_tujuan, satuank, qty_req, qty_acc, batch_no, expire_date, user)
+		values(
+				'".$data["id_amprah"]."',
+				'".$data["id_obat"]."',
+				'".$data["id_gudang"]."',
+				'".$data["id_gudang_tujuan"]."',
+				'".$data["satuank"]."',
+				'".$data["qty_req"]."',
+				'".$data["qty_acc"]."',
+				'".$data["batch_no"]."',
+				'".$expire_date."',
+				'".$this->session->userdata('username')."'
+			)"))
+			{
+				
+				$this->db->query("UPDATE gudang_inventory SET qty = qty - '".$data["qty_acc"]."' 
+				WHERE id_gudang = '".$data["id_gudang_tujuan"]."'
+				AND id_obat  = '".$data["id_obat"]."'
+				AND batch_no = '".$data["batch_no"]."'");
+				
+				//Check stock gudang peminta
+				$check_stock = $this->check_stock($data["id_gudang"], $data["id_obat"], $data["batch_no"]);
+				if ($check_stock > 0)			
+					$this->db->query("UPDATE gudang_inventory SET qty = qty + '".$data["qty_acc"]."' 
+					WHERE id_gudang = '1'
+					AND id_obat  = '".$data["id_obat"]."'
+					AND batch_no = '".$data["batch_no"]."'");
+				else
+					$this->db->query("INSERT INTO gudang_inventory(id_gudang, id_obat, batch_no, qty, expire_date)
+					VALUES(
+							'".$data["id_gudang"]."',
+							'".$data["id_obat"]."',
+							'".$data["batch_no"]."',
+							'".$data["qty_acc"]."',
+							'".$expire_date."'
+						)");
+			}
+		return true;
+   }
+   
+	function delete_detail_acc($id){		
+		$this->db->where('id',$id);	
+		if ($this->db->delete('distribusi')){
+			return true;
+		}else{			
+			return false;
+		}
+	}
+}
+
+?>

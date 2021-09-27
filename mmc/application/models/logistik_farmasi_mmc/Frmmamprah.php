@@ -1,0 +1,379 @@
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
+
+class Frmmamprah extends CI_Model
+{
+    function __construct()
+    {
+        parent::__construct();
+    }
+
+    function insert($data)
+    {
+        if ($this->db->query("insert into amprah(tgl_amprah, gd_asal, gd_dituju, user, minggu)
+							values(
+									'" . $data["tgl_amprah"] . "',
+									'" . $data["gd_asal"] . "',
+									'" . $data["gd_dituju"] . "',
+									'" . $data["user"] . "',
+                  '" . $data["minggu"]. "'
+								)")
+        ) {
+            $json = json_decode($data["dataobat"], true);
+            $id_amprah = $this->db->insert_id();
+            //echo $id_amprah."<br><br>";
+
+            $dataobat = array();
+            $arr = array("id_amprah" => $id_amprah, "id_gudang" => $data["gd_asal"], "id_gudang_tujuan" => $data["gd_dituju"], "user" => $data["user"]);
+            foreach ($json as &$value) {
+                array_push($dataobat, array_merge($value, $arr));
+            }
+
+            $this->db->insert_batch('distribusi', $dataobat);
+            return $id_amprah;
+        }
+        return false;
+    }
+
+    function insert_langsung($data)
+    {
+        if ($this->db->query("insert into amprah(tgl_amprah, gd_asal, gd_dituju, user)
+							values(
+									'" . $data["tgl_amprah"] . "',
+									'" . $data["gd_asal"] . "',
+									'" . $data["gd_dituju"] . "',
+									'" . $data["user"] . "'
+								)")
+        ) {
+            $json = json_decode($data["dataobat"], true);
+            $id_amprah = $this->db->insert_id();
+            //echo $id_amprah."<br><br>";
+
+            $dataobat = array();
+            $arr = array("id_amprah" => $id_amprah, "id_gudang" => $data["gd_asal"], "id_gudang_tujuan" => $data["gd_dituju"], "user" => $data["user"]);
+            foreach ($json as &$value) {
+                array_push($dataobat, array_merge($value, $arr));
+            }
+
+            $this->db->insert_batch('distribusi', $dataobat);
+            return $id_amprah;
+        }
+        return false;
+    }
+
+    /*
+     function update($json){
+         foreach ($json as &$value) {
+             $id = $value[0]["value"];
+             $id_gudang = $value[1]["value"];
+             $id_gudang_tujuan = $value[2]["value"];
+             $id_obat = $value[3]["value"];
+             $qty_acc = $value[4]["value"];
+             $batch_no = $value[5]["value"];
+             $keterangan = $value[6]["value"];
+             $expire_date = $this->get_expire_date($id_gudang_tujuan, $id_obat, $batch_no);
+
+             $this->db->query("UPDATE distribusi SET batch_no = '".$batch_no."', qty_acc = '".$qty_acc."', expire_date = '".$expire_date."', keterangan ='".$keterangan."' WHERE id = '".$id."'");
+
+             $this->db->query("UPDATE gudang_inventory SET qty = qty - '".$qty_acc."'
+             WHERE id_gudang = '".$id_gudang_tujuan."'
+             AND id_obat  = '".$id_obat."'
+             AND batch_no = '".$batch_no."'");
+
+             //Check stock gudang peminta
+             $check_stock = $this->check_stock($id_gudang, $id_obat, $batch_no);
+             if ($check_stock > 0)
+                 $this->db->query("UPDATE gudang_inventory SET qty = qty + '".$qty_acc."'
+                 WHERE id_gudang = '".$id_gudang."'
+                 AND id_obat  = '".$id_obat."'
+                 AND batch_no = '".$batch_no."'");
+             else
+                 $this->db->query("INSERT INTO gudang_inventory(id_gudang, id_obat, batch_no, qty, expire_date)
+                 VALUES(
+                         '".$id_gudang."',
+                         '".$id_obat."',
+                         '".$batch_no."',
+                         '".$qty_acc."',
+                         '".$expire_date."'
+                     )");
+         }
+         return true;
+    }
+    */
+    function get_gudang_tujuan()
+    {
+        return $this->db->query("SELECT * FROM master_gudang");
+    }
+
+    function get_gudang_asal()
+    {
+        $userid = $this->session->userdata('userid');
+        return $this->db->query("SELECT * FROM dyn_gudang_user WHERE userid = $userid ORDER BY id_gudang");
+    }
+
+    function get($id_obat)
+    {
+        $query = $this->db->get_where('master_obat', array('id_obat' => $id_obat));
+        return $query->row();
+    }
+
+    function getdata_amprah_by_role($data)
+    {
+        $userid = $this->session->userdata('userid');
+
+        $where = "";
+        if ($data["id_amprah"] != "") {
+            $where .= " AND a.id_amprah = " . $data["id_amprah"];
+        } else {
+            if (($data["tgl0"] != "") && ($data["tgl1"] == "")) {
+                $where .= " AND a.tgl_amprah = '" . $data["tgl0"] . "'";
+            }
+            if (($data["tgl0"] != "") && ($data["tgl1"] != "")) {
+                $where .= " AND a.tgl_amprah BETWEEN ('" . $data["tgl0"] . "') AND ('" . $data["tgl1"] . "')";
+            }
+            if ($data["gd_asal"] != "") {
+                $where .= " AND a.gd_asal = '" . $data["gd_asal"] . "'";
+            }
+            if ($data["gd_dituju"] != "") {
+                $where .= " AND a.gd_dituju = '" . $data["gd_dituju"] . "'";
+            }
+        }
+        return $this->db->query("SELECT 
+              a.id_amprah,
+              a.tgl_amprah,
+              a.gd_asal,
+              a.gd_dituju,
+              a.user,
+              a.no_faktur,
+              d.nama_gudang,
+              m.nama_gudang AS nama_gudang_dituju, 
+              SUM(ds.qty_req - ds.qty_acc) AS sisa
+            FROM
+              amprah a 
+              INNER JOIN master_gudang d 
+                ON a.gd_asal = d.id_gudang 
+              INNER JOIN master_gudang m 
+                ON a.gd_dituju = m.id_gudang 
+              INNER JOIN distribusi ds
+                ON ds.`id_amprah` = a.`id_amprah`
+              INNER JOIN dyn_gudang_user dy
+                ON dy.`id_gudang` = a.`gd_asal`
+			WHERE dy.userid = $userid 
+			and a.jenis_amprah!='BHP'
+			$where
+			GROUP BY a.`id_amprah`
+			ORDER BY id_amprah ASC")->result();
+    }
+
+    function getdata_amprahbhp_by_role($data)
+    {
+        $userid = $this->session->userdata('userid');
+
+        $where = "";
+        if ($data["id_amprah"] != "") {
+            $where .= " AND a.id_amprah = " . $data["id_amprah"];
+        } else {
+            if (($data["tgl0"] != "") && ($data["tgl1"] == "")) {
+                $where .= " AND a.tgl_amprah = '" . $data["tgl0"] . "'";
+            }
+            if (($data["tgl0"] != "") && ($data["tgl1"] != "")) {
+                $where .= " AND a.tgl_amprah BETWEEN ('" . $data["tgl0"] . "') AND ('" . $data["tgl1"] . "')";
+            }
+            if ($data["gd_asal"] != "") {
+                $where .= " AND a.gd_asal = '" . $data["gd_asal"] . "'";
+            }
+            if ($data["gd_dituju"] != "") {
+                $where .= " AND a.gd_dituju = '" . $data["gd_dituju"] . "'";
+            }
+        }
+        return $this->db->query("SELECT a.id_amprah, a.tgl_amprah, a.gd_asal, a.gd_dituju, a.user, a.no_faktur, d.nama_gudang, m.nama_gudang as nama_gudang_dituju, s.open
+			FROM amprah a
+			LEFT JOIN dyn_gudang_user d ON a.gd_asal = d.id_gudang
+			LEFT JOIN master_gudang m ON a.gd_dituju = m.id_gudang
+			LEFT JOIN (SELECT id_amprah, count(qty_req) - count(qty_acc) as open
+			FROM distribusi
+			GROUP BY id_amprah) s ON a.id_amprah = s.id_amprah
+			WHERE d.userid = $userid
+			and a.jenis_amprah='BHP' 
+			$where
+			ORDER BY id_amprah ASC")->result();
+    }
+
+    function get_amprah_detail_list($id)
+    {
+        return $this->db->query("SELECT a.id, a.id_amprah, a.id_obat, b.nm_obat, a.satuank, a.qty_req, a.qty_acc, a.expire_date, a.batch_no, a.keterangan, a.id_gudang_tujuan, a.id_gudang, b.hargabeli
+			FROM distribusi a
+			LEFT JOIN master_obat b on a.id_obat = b.id_obat
+			WHERE a.id_amprah = $id")->result();
+    }
+
+    function get_info($id)
+    {
+        $query = $this->db->query("SELECT a.id_amprah, a.no_faktur, a.gd_dituju, a.gd_asal, a.tgl_amprah, m1.nama_gudang as nm_gd_asal, m2.nama_gudang as nm_gd_dituju, a.user
+			FROM amprah a
+			JOIN master_gudang m1 ON a.gd_asal = m1.id_gudang
+			JOIN master_gudang m2 ON a.gd_dituju = m2.id_gudang
+			WHERE a.id_amprah = " . $id);
+
+        if ($query->num_rows() == 1) {
+            return $query->row();
+        } else {
+            //create object with empty properties.
+            $obj = new stdClass;
+
+            foreach ($query->list_fields() as $field) {
+                $obj->$field = '';
+            }
+
+            return $obj;
+        }
+    }
+    /*
+      function get_all($id_obat) {
+        $query = $this->db->query("SELECT id_obat, nm_obat, hargajual, faktorsatuan FROM master_obat ORDER BY id_obat");
+        return $query->result();
+        }
+
+        function get_roleid($userid){
+          return $this->db->query("Select roleid from dyn_role_user where userid = '".$userid."'");
+        }
+
+        function get_gudangid($userid){
+          return $this->db->query("Select id_gudang from dyn_gudang_user where userid = '".$userid."'");
+        }
+
+       function get_all_data_receiving(){
+          return $this->db->query("SELECT a.receiving_id, a.receiving_time, b.company_name , (SELECT SUM(quantity_purchased) FROM receivings_items WHERE
+            receiving_id=a.receiving_id GROUP BY receiving_id) as total FROM receivings as a, suppliers as b WHERE a.supplier_id=b.person_id
+            ORDER BY a.receiving_id");
+      }
+
+       function get_receivings($no_faktur) {
+         $query = $this->db->get_where('receivings', array('no_faktur'=>$no_faktur));
+         return $query;
+        }
+
+        function getdata_gudang_inventory(){
+          return $this->db->query("SELECT * , (SELECT nm_obat FROM master_obat WHERE id_obat=a.id_obat) as nm_obat , (SELECT nama_gudang FROM master_gudang WHERE id_gudang=a.id_gudang) as nama_gudang
+            FROM gudang_inventory as a order by batch_no");
+        }
+        function get_receiving_amprah($id_amprah) {
+         $query = $this->db->get_where('amprah', array('id_amprah'=>$id_amprah));
+         return $query;
+      }
+
+        function getitem_obat($id_obat){
+                return $this->db->query("SELECT * FROM master_obat WHERE id_obat='".$id_obat."'");
+            }
+
+        function getnama_gudang($id_gudang){
+          return $this->db->query("SELECT * FROM master_gudang WHERE id_gudang='".$id_gudang."'");
+        }
+
+
+        function insert_amprah($data1){
+          $this->db->insert('header_amprah', $data1);
+          return true;
+        }
+         function update_retur($batch_no){
+          return $this->db->query("UPDATE gudang_inventory SET qty='$qty' WHERE batch_no='$batch_no'");
+        }
+
+        function hapus_data_receiving($receiving_id,$id_obat){
+          return $this->db->query("DELETE FROM receiving_item WHERE receiving_id='$receiving_id' AND id_obat='$id_obat'");
+        }
+
+        function data_gudang($id_inventory){
+          return $this->db->query("SELECT b.id_inventory, b.id_gudang, a.nm_obat, a.id_obat, b.batch_no , b.qty, LEFT(b.expire_date,10) as expire_date from master_obat as a, gudang_inventory as b where a.id_obat = b.id_obat and b.id_inventory ='$id_inventory'");
+        }
+
+        function cari_gudang(){
+         return $this->db->query("SELECT * FROM master_gudang ORDER BY id_gudang");
+        }
+
+        function data_gudang1($id_amprah){
+          return $this->db->query("SELECT b.id_amprah, b.id_gudang, a.nm_obat, a.id_obat, b.batch_no , b.qty from master_obat as a, amprah as b where a.id_obat = b.id_obat and b.id_amprah ='$id_amprah'");
+        }
+
+        function cek_obat_gudang($id_obat, $expire_date, $id_gudang){
+          return $this->db->query("SELECT id_inventory FROM gudang_inventory WHERE id_obat='$id_obat' and LEFT(expire_date,10)='$expire_date' and id_gudang='$id_gudang'");
+        }
+
+         function getdata_receiving_amprah($id_amprah){
+         return $this->db->query("SELECT * FROM distribusi WHERE id_amprah='$id_amprah'");
+        }
+
+        // function get_receivings($no_faktur) {
+        //  $this->db->get_where('header_amprah', array('no_faktur'=>$no_faktur));
+        //  return true;
+        // }
+
+       function getnm_obat($id_obat){
+        return $this->db->query("SELECT nm_obat FROM master_obat where id_obat='$id_obat'");
+
+       }
+
+       function insert_receiving_amprah($data){
+        $this->db->insert('amprah',$data);
+         return  true;
+       }
+
+        function hapus_data_amprah($id_amprah,$id_obat){
+         return $this->db->query("DELETE FROM amprah WHERE id_amprah='$id_amprah' AND id_obat='$id_obat'");
+      }
+
+         function get_id_amprah($data){
+            $tgl_amprah=$data['tgl_amprah'];
+            $user=$data['user'];
+            $gd_asal=$data['gd_asal'];
+            $gd_dituju=$data['gd_dituju'];
+         return $this->db->query("SELECT id_amprah FROM header_amprah WHERE tgl_amprah='$tgl_amprah' and user='$user' and  gd_asal='$gd_asal' and gd_dituju='$gd_dituju'");
+        }*/
+
+    function insertDistribusiLangsung($data){
+        if ($this->db->query("insert into amprah(tgl_amprah, gd_asal, gd_dituju, user, minggu)
+							values(
+									'" . $data["tgl_amprah"] . "',
+									'" . $data["gd_asal"] . "',
+									'" . $data["gd_dituju"] . "',
+									'" . $data["user"] . "',
+                  '" . $data["minggu"] . "'
+								)")
+        ) {
+            $json = json_decode($data["dataobat"], true);
+            $id_amprah = $this->db->insert_id();
+            //echo $id_amprah."<br><br>";
+
+            $dataobat = array();
+            $arr = array("id_amprah" => $id_amprah, "id_gudang" => $data["gd_asal"], "id_gudang_tujuan" => $data["gd_dituju"], "user" => $data["user"]);
+            foreach ($json as &$value) {
+                array_push($dataobat, array_merge($value, $arr));
+            }
+            $this->db->insert_batch('distribusi', $dataobat);
+
+            //Langsung Update Stok
+            foreach ($dataobat as $item) {
+                //Cek apakah stok digudang yg dituju sudah ada Barangnya/ Belum
+                $cek = $this->db->query("SELECT*FROM gudang_inventory WHERE id_obat = '".$item['id_obat']."' AND id_gudang = '".$item['gd_dituju']."' AND batch_no = '".$item['batch_no']."'")->num_rows();
+
+                //Insert/ Update Stok di Gudang yang dituju
+                if($cek > 0){
+                    $this->db->query("UPDATE gudang_inventory
+                            SET qty = qty + ".$item['qty_req']."
+                            WHERE id_obat = '".$item['id_obat']."' AND id_gudang = ".$data['gd_dituju']." AND batch_no = '".$item['batch_no']."'");
+                }else{
+                    $this->db->query("INSERT INTO gudang_inventory (id_inventory, id_obat, id_gudang, qty, expire_date, batch_no, quantity_retur)
+                        VALUES ('', '".$item['id_obat']."', '".$data['gd_dituju']."', '".$item['qty_req']."', '".$item['expire_date']."', '".$item['batch_no']."', 0)");
+                }
+
+                //Update Stok Gudang Pengirim
+                $this->db->query("UPDATE gudang_inventory
+                            SET qty = qty - ".$item['qty_req']."
+                            WHERE id_obat = '".$item['id_obat']."' AND id_gudang = ".$data['gd_asal']." AND batch_no = '".$item['batch_no']."'");
+            }
+            return $id_amprah;
+        }
+        return false;
+    }
+}
+
+?>

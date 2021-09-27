@@ -1,0 +1,161 @@
+<?php $this->load->view("layout/header"); ?>
+
+<script type='text/javascript'>
+  var site = "<?php echo site_url();?>";
+
+  $(document).ready(function() {
+
+    $('#date_picker_awal').datepicker({
+        format: "yyyy-mm-dd",
+        endDate: "current",
+        autoclose: true,
+        todayHighlight: true,
+    }); 
+    $('#date_picker_akhir').datepicker({
+        format: "yyyy-mm-dd",
+        endDate: "current",
+        autoclose: true,
+        todayHighlight: true,
+    }); 
+
+    document.getElementById("date_picker_awal").required = true;
+    document.getElementById("date_picker_akhir").required = true;
+    //date
+    var d = new Date();
+    var currDate = d.getDate();
+    var currMonth = d.getMonth()+1;
+    var currYear = d.getFullYear();
+
+    var firstMonth = currYear + "-" + currMonth + "-" + 01;
+
+    $('#date_picker_awal').datepicker("setDate", firstMonth);
+    $('#date_picker_akhir').datepicker("setDate", "0");
+  });
+
+  var intervalSetting = function () {
+    var tgl_akhir=document.getElementById("date_picker_akhir").value;
+    var tgl_awal=document.getElementById("date_picker_awal").value;
+    if (tgl_akhir!='' && tgl_awal!=''){
+      pilih_rawat();
+    }
+  };
+  setInterval(intervalSetting, 300000);
+
+  function cek_tgl_awal(tgl_awal){
+    var tgl_akhir=document.getElementById("date_picker_akhir").value;
+    if(tgl_akhir==''){
+    //none :D just none
+    }else if(tgl_akhir<tgl_awal){
+      document.getElementById("date_picker_akhir").value = '';
+    }
+  }
+
+  function cek_tgl_akhir(tgl_akhir){
+    var tgl_awal=document.getElementById("date_picker_awal").value;
+    if(tgl_akhir<tgl_awal){
+      document.getElementById("date_picker_awal").value = '';
+    }
+  }
+      
+  function get_diagnosa() {
+    var id_rawat=document.getElementById("id_rawat").value;
+    var tgl_akhir=document.getElementById("date_picker_akhir").value;
+    var tgl_awal=document.getElementById("date_picker_awal").value;
+    if(tgl_awal!="" && tgl_akhir!="" && id_rawat!=""){
+      $('#rawat').html("");
+      $('#rawat').show();
+      $('#overlay').show();
+      $.ajax({
+        type:'POST',
+        dataType: 'json',
+        url:"<?php echo base_url('Cdashboard/get_data_diagnosa')?>",
+        data: {
+          id_rawat : id_rawat,
+          tgl_akhir : tgl_akhir,
+          tgl_awal : tgl_awal
+        },
+        success: function(data){
+          if(data ==""){
+            alert("Data Kosong");
+            $('#overlay').hide();
+            $('#rawat').hide();
+          } else {
+            var bar = new Morris.Bar({
+              // ID of the element in which to draw the chart.
+              element: 'rawat',
+              // Chart data records -- each entry in this array corresponds to a point on
+              // the chart.
+              data: data,
+              // The name of the data record attribute that contains x-values.
+              xkey: "nama",
+              xLabelAngle: 60,
+              // A list of names of data record attributes that contain y-values.
+              ykeys: ['jumlah'],
+              // Labels for the ykeys -- will be displayed when you hover over the
+              // chart.
+              labels: ['Jumlah Pasien']
+            });
+            $('#overlay').hide();
+          }
+        },
+        error: function(){
+          alert("error");
+        }
+      });
+    } else {
+      alert("Pilih Tanggal Dulu");
+    }
+  }
+
+  function download_excel() {
+    var akhir=document.getElementById("date_picker_akhir").value;
+    var awal=document.getElementById("date_picker_awal").value;
+    if(awal!="" && akhir!=""){
+      window.location.href = "<?php echo base_url('cdashboard/export_excel')?>/"+awal+"/"+akhir;
+    } else {
+      alert("Pilih Data Terlebih Dahulu.");
+    }
+  }
+        
+
+</script>
+
+<!-- Main content -->
+<section class="content">
+  <!-- Main row -->
+  <div class="row">
+    <div class="col-md-12">
+      <!-- AREA CHART -->
+      <div class="box box-primary">
+        <div class="box-body chart-responsive">
+          <p class="col-sm-2">Cari Data</p>
+          <div class="col-sm-10">
+            <div class="form-inline">
+              <div class="form-group">
+                <input type="text" id="date_picker_awal" class="form-control date_picker_awal" placeholder="Tanggal awal" name="date_picker_awal" onchange="cek_tgl_awal(this.value)" required>
+                <input type="text" id="date_picker_akhir" class="form-control date_picker_akhir" placeholder="Tanggal akhir" name="date_picker_akhir" onchange="cek_tgl_akhir(this.value)" required>
+                <select name="id_rawat" id="id_rawat" class="form-control">
+                  <option value="" disabled selected="">-Pilih Instalasi-</option>
+                  <option value="ird">Rawat Darurat</option>
+                  <option value="irj">Rawat Jalan</option>
+                  <option value="iri">Rawat Inap</option>
+                </select>
+                <button class="btn btn-primary" type="submit" onclick="get_diagnosa()">Cari</button>
+                <button class="btn btn-primary" type="submit" onclick="download_excel()">Download Excel</button>
+              </div>
+            </div>
+          </div>
+          <div hidden class="chart" id="rawat" style="height: 450px;"></div>
+          <div hidden class="overlay" id="overlay">
+            <i class="fa fa-refresh fa-spin"></i>
+          </div>
+        </div>
+        <!-- /.box-body -->
+      </div>
+      <!-- /.box -->
+    </div>
+  </div>
+  <!-- /.row -->
+  
+</section><!-- /.content -->
+<?php $this->load->view("layout/footer"); ?>

@@ -1,0 +1,273 @@
+ <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+include('Fcterbilang.php');
+
+require_once(APPPATH.'controllers/Secure_area.php');
+class Fcrekap extends Secure_area{
+	public function __construct() {
+		parent::__construct();
+		$this->load->model('faktur/fmrekap','',TRUE);
+		$this->load->model('irj/rjmkwitansi','',TRUE);
+		$this->load->model('irj/rjmpencarian','',TRUE);
+		$this->load->model('irj/rjmpelayanan','',TRUE);
+		$this->load->model('irj/rjmregistrasi','',TRUE);
+		$this->load->model('ird/ModelKwitansi','',TRUE);
+		$this->load->model('ird/ModelPelayanan','',TRUE);
+		$this->load->model('ird/ModelRegistrasi','',TRUE);
+		$this->load->model('ird/ModelKwitansi','',TRUE);
+		$this->load->model('lab/labmdaftar','',TRUE);
+		$this->load->model('lab/labmkwitansi','',TRUE);
+		$this->load->model('rad/radmdaftar','',TRUE);
+		$this->load->model('rad/radmkwitansi','',TRUE);
+		$this->load->helper('pdf_helper');
+	}
+	public function index()
+	{
+		redirect('faktur/fcrekap','refresh');
+	}
+	
+	public function rawat_jalan()
+	{
+		$data['title'] = 'Rekap Faktur Rawat Jalan';
+		$date=$this->input->post('date');
+		if ($date!='') { 
+			$data['date'] = date('d-m-Y',strtotime($date));
+			$data['pasien_daftar']=$this->fmrekap->get_pasien_kwitansi_irj_by_date($date)->result();
+			/*if(sizeof($data['pasien_daftar'])==0){
+				$this->session->set_flashdata('message_nodata','<div class="row">
+							<div class="col-md-12">
+							  <div class="box box-default box-solid">
+								<div class="box-header with-border">
+								  <center>Tidak ada lagi data</center>
+								</div>
+							  </div>
+							</div>
+						</div>');
+			}
+			*/			
+		}else{
+		$data['date'] = date('d-m-Y');
+		$data['pasien_daftar']=$this->fmrekap->get_rekap_faktur_irj()->result();
+		/*if(sizeof($data['pasien_daftar'])==0){
+			$this->session->set_flashdata('message_nodata','<div class="row">
+						<div class="col-md-12">
+						  <div class="box box-default box-solid">
+							<div class="box-header with-border">
+							  <center>Tidak ada lagi data</center>
+							</div>
+						  </div>
+						</div>
+					</div>');
+		}
+		*/
+		}
+		$this->load->view('faktur/fvrekap_irj',$data);
+	}
+
+	public function rawat_inap()
+	{
+		$data['title'] = 'Rekap Faktur Rawat Inap';
+		$date=$this->input->post('date');
+		if ($date!='') { 
+			$data['date'] = date('d-m-Y',strtotime($date));
+			$data['pasien_daftar']=$this->fmrekap->get_pasien_kwitansi_iri_by_date($date)->result();
+			/*if(sizeof($data['pasien_daftar'])==0){
+				$this->session->set_flashdata('message_nodata','<div class="row">
+							<div class="col-md-12">
+							  <div class="box box-default box-solid">
+								<div class="box-header with-border">
+								  <center>Tidak ada lagi data</center>
+								</div>
+							  </div>
+							</div>
+						</div>');
+			}
+			*/			
+		}else{
+		$data['date'] = date('d-m-Y');
+		$data['pasien_daftar']=$this->fmrekap->get_rekap_faktur_iri()->result();
+		/*if(sizeof($data['pasien_daftar'])==0){
+			$this->session->set_flashdata('message_nodata','<div class="row">
+						<div class="col-md-12">
+						  <div class="box box-default box-solid">
+							<div class="box-header with-border">
+							  <center>Tidak ada lagi data</center>
+							</div>
+						  </div>
+						</div>
+					</div>');
+		}
+		*/
+		}
+		$this->load->view('faktur/fvrekap_iri',$data);
+	}
+	
+	public function rawat_darurat()
+	{
+		$data['title'] = 'Rekap Faktur Rawat Darurat';
+		$date=$this->input->post('date');
+		$setor='';
+		echo '<script type="text/javascript">document.cookie = "penyetor='.$setor.'";</script>';
+		//echo $date;
+		if ($date!='') { 
+			$data['date'] = date('d-m-Y',strtotime($date));
+			$data['pasien_daftar']=$this->fmrekap->get_pasien_kwitansi_ird_by_date($date)->result();
+			/*if(sizeof($data['pasien_daftar'])==0){
+				$this->session->set_flashdata('message_nodata','<div class="row">
+							<div class="col-md-12">
+							  <div class="box box-default box-solid">
+								<div class="box-header with-border">
+								  <center>Tidak ada lagi data</center>
+								</div>
+							  </div>
+							</div>
+						</div>');
+			}
+			*/			
+		}else{
+		$data['date'] = date('d-m-Y');
+		$data['pasien_daftar']=$this->fmrekap->get_rekap_faktur_ird()->result();
+		/*if(sizeof($data['pasien_daftar'])==0){
+			$this->session->set_flashdata('message_nodata','<div class="row">
+						<div class="col-md-12">
+						  <div class="box box-default box-solid">
+							<div class="box-header with-border">
+							  <center>Tidak ada lagi data</center>
+							</div>
+						  </div>
+						</div>
+					</div>');
+		}
+		*/
+		}
+		$this->load->view('faktur/fvrekap_ird',$data);
+		
+	}
+	public function faktur_ird($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/ird/rdkwitansi/'.$link));
+	}
+	
+	public function faktur_irj($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/irj/rjkwitansi/'.$link));
+	}	
+	
+	public function lab()
+	{
+		$data['title'] = 'Rekap Faktur & Kwitansi Laboratorim';
+		$date=$this->input->post('date');
+		if ($date!='') { 
+			$data['date'] = date('d-m-Y',strtotime($date));
+			$data['daftar_lab']=$this->fmrekap->get_rekap_lab_by_date($date)->result();
+		}else{
+			$data['date'] = date('d-m-Y');
+			$data['daftar_lab']=$this->fmrekap->get_rekap_lab()->result();
+		}
+		$this->load->view('faktur/fvrekap_lab',$data);
+	}
+	public function faktur_lab($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/lab/labfaktur/'.$link));
+	}
+	public function kwitansi_lab($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/lab/labkwitansi/'.$link));
+	}
+	
+	public function rad()
+	{
+		$data['title'] = 'Rekap Faktur & Kwitansi Radiologi';
+		$date=$this->input->post('date');
+		if ($date!='') { 
+			$data['date'] = date('d-m-Y',strtotime($date));
+			$data['daftar_rad']=$this->fmrekap->get_rekap_rad_by_date($date)->result();
+		}else{
+			$data['date'] = date('d-m-Y');
+			$data['daftar_rad']=$this->fmrekap->get_rekap_rad()->result();
+		}
+		$this->load->view('faktur/fvrekap_rad',$data);
+	}
+	public function faktur_rad($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/rad/radfaktur/'.$link));
+	}
+	public function kwitansi_rad($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/rad/radkwitansi/'.$link));
+	}
+	
+	public function frm()
+	{
+		$data['title'] = 'Rekap Faktur & Kwitansi Farmasi';
+		$date=$this->input->post('date');
+		if ($date!='') { 
+			$data['date'] = date('d-m-Y',strtotime($date));
+			$data['daftar_farmasi']=$this->fmrekap->get_rekap_frm_by_date($date)->result();
+		}else{
+			$data['date'] = date('d-m-Y');
+			$data['daftar_farmasi']=$this->fmrekap->get_rekap_frm()->result();
+		}
+		$this->load->view('faktur/fvrekap_frm',$data);
+	}
+	public function faktur_frm($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/farmasi/frmkwitansi/'.$link));
+	}
+
+	//pembayaran_RI00000008_Tentara_Coba
+	//"detail_pembayaran_".$pasien[0]['no_ipd']."_".$nama_pasien." .pdf"
+	public function kw_iri($noreg)
+	{
+		$data1=$this->fmrekap->get_data_pasien_by_noreg($noreg)->row();
+		$nama = str_replace(" ","_",$data1->nama);	
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/inap/laporan/pembayaran/detail_pembayaran_'.$noreg.'_'.$nama.' .pdf'));
+	}
+
+	//detail_pembayaran_".$pasien[0]['no_ipd']."_".$nama_pasien."_faktur.pdf
+	public function faktur_iri($noreg)
+	{
+		$data1=$this->fmrekap->get_data_pasien_by_noreg($noreg)->row();
+		$nama = str_replace(" ","_",$data1->nama);	
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/inap/laporan/pembayaran/detail_pembayaran_'.$noreg.'_'.$nama.'_faktur.pdf'));
+	}
+
+	public function kw_irj_1($noreg)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/irj/rjkwitansi/Daftar_'.$noreg.'-1.pdf'));
+	}
+	public function kw_irj_2($noreg)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/irj/rjkwitansi/IRJ_'.$noreg.'.pdf'));
+	}
+	public function kwitansi_frm($link)
+	{
+		$url = $this->output
+           ->set_content_type('application/pdf')
+           ->set_output(file_get_contents(FCPATH.'download/farmasi/frmkwitansi/'.$link));
+	}
+	
+}
+?>

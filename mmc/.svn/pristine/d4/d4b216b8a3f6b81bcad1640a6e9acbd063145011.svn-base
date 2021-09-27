@@ -1,0 +1,54 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+	class Mmdokter extends CI_Model{
+		function __construct(){
+			parent::__construct();
+		}
+
+		//master dokter
+		function get_all_dokter(){
+			return $this->db->query("SELECT a.id_dokter, a.nm_dokter, a.nipeg, a.ket, b.id_poli, (SELECT nm_poli FROM poliklinik where id_poli=b.id_poli) as nm_poli FROM data_dokter as a 
+				LEFT JOIN dokter_poli as b ON a.id_dokter=b.id_dokter 
+				where a.deleted='0'
+				ORDER BY id_dokter");
+		}
+
+		function get_data_dokter($id_dokter){
+			return $this->db->query("SELECT *, a.id_dokter as id_dokter, (SELECT nm_poli from poliklinik WHERE id_poli=b.id_poli) as nm_poli FROM `data_dokter` a LEFT JOIN dokter_poli b on a.id_dokter=b.id_dokter where a.id_dokter='$id_dokter'");
+		}
+
+		function get_dokter($nm_dokter){
+			return $this->db->query("SELECT * FROM data_dokter WHERE nm_dokter='$nm_dokter'");
+		}
+		function get_all_biaya(){
+			return $this->db->query("SELECT * FROM jenis_tindakan a, tarif_tindakan b where a.idtindakan=b.id_tindakan and kelas='III' and (nmtindakan like '%Konsul%' or nmtindakan like '%PERIKSA%')");
+		}
+		
+
+		function delete_dokter_poli($id_poli,$id_dokter){
+			return $this->db->query("DELETE FROM dokter_poli WHERE id_dokter='$id_dokter' and id_poli='$id_poli'");
+		}
+
+		function delete_dokter($id_dokter,$data){
+			$this->db->where('id_dokter', $id_dokter);
+			$this->db->update('data_dokter', $data); 
+			return true;
+		}
+
+		function insert_dokter($data){
+			$this->db->insert('data_dokter', $data);
+			return true;
+		}
+
+		function insert_dokter_poli($data){
+			$this->db->insert('dokter_poli', $data);
+			return true;
+		}
+
+		function edit_dokter($id_dokter, $data){
+			$this->db->where('id_dokter', $id_dokter);
+			$this->db->update('data_dokter', $data); 
+			return true;
+		}
+	}
+?>

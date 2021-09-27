@@ -1,0 +1,176 @@
+<?php $this->load->view("layout/header"); ?>
+
+<script type='text/javascript'>
+  var site = "<?php echo site_url();?>";
+
+  $(document).ready(function() {
+
+    $('#date_picker_awal').datepicker({
+        format: "yyyy-mm-dd",
+        endDate: "current",
+        autoclose: true,
+        todayHighlight: true,
+    }); 
+    $('#date_picker_akhir').datepicker({
+        format: "yyyy-mm-dd",
+        endDate: "current",
+        autoclose: true,
+        todayHighlight: true,
+    }); 
+
+    document.getElementById("date_picker_awal").required = true;
+    document.getElementById("date_picker_akhir").required = true;
+    //date
+    var d = new Date();
+    var currDate = d.getDate();
+    var currMonth = d.getMonth()+1;
+    var currYear = d.getFullYear();
+
+    var firstMonth = currYear + "-" + currMonth + "-" + 01;
+
+    $('#date_picker_awal').datepicker("setDate", firstMonth);
+    $('#date_picker_akhir').datepicker("setDate", "0");
+  });
+
+  var intervalSetting = function () {
+    var tgl_akhir=document.getElementById("date_picker_akhir").value;
+    var tgl_awal=document.getElementById("date_picker_awal").value;
+    if (tgl_akhir!='' && tgl_awal!=''){
+      pilih_tgl();
+    }
+  };
+  setInterval(intervalSetting, 300000);
+
+  function number_format(number, decimals, dec_point, thousands_sep) {
+    number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
+    var n = !isFinite(+number) ? 0 : +number,
+      prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+      sep = (typeof thousands_sep === 'undefined') ? '.' : thousands_sep,
+      dec = (typeof dec_point === 'undefined') ? ',' : dec_point,
+      s = '',
+      toFixedFix = function (n, prec) {
+        var k = Math.pow(10, prec);
+        return '' + Math.round(n * k) / k;
+      };
+    // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+    s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+    if (s[0].length > 3) {
+      s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+    }
+    if ((s[1] || '').length < prec) {
+      s[1] = s[1] || '';
+      s[1] += new Array(prec - s[1].length + 1).join('0');
+    }
+    return s.join(dec);
+  }
+
+  function cek_tgl_awal(tgl_awal){
+    var tgl_akhir=document.getElementById("date_picker_akhir").value;
+    if(tgl_akhir==''){
+    //none :D just none
+    }else if(tgl_akhir<tgl_awal){
+      document.getElementById("date_picker_akhir").value = '';
+    }
+  }
+
+  function cek_tgl_akhir(tgl_akhir){
+    var tgl_awal=document.getElementById("date_picker_awal").value;
+    if(tgl_akhir<tgl_awal){
+      document.getElementById("date_picker_awal").value = '';
+    }
+  }
+      
+  function pilih_tgl() {
+    var tgl_akhir=document.getElementById("date_picker_akhir").value;
+    var tgl_awal=document.getElementById("date_picker_awal").value;
+    if(tgl_awal!="" && tgl_akhir!=""){
+      $('#data-pendapatan').html("");
+      $('#data-pendapatan').show();
+      $('#overlay').show();
+      //VTOT
+      $.ajax({
+        type:'POST',
+        dataType: 'json',
+        url:"<?php echo base_url('Cdashboard/get_data_vtot')?>",
+        data: {
+          tgl_akhir : tgl_akhir,
+          tgl_awal : tgl_awal
+        },
+        success: function(data){
+          var a = number_format(data, 2);
+          $("#vtot").val(a);
+          document.getElementById("vtot").innerHTML = "Total Pendapatan Rp."+a;
+        },
+        error: function(){
+          alert("error");
+        }
+      });
+      //PIE
+      $.ajax({
+        type:'POST',
+        dataType: 'json',
+        url:"<?php echo base_url('Cdashboard/get_data_pendapatan')?>",
+        data: {
+          tgl_akhir : tgl_akhir,
+          tgl_awal : tgl_awal
+        },
+        success: function(data){
+          if(data ==""){
+            alert("Data Kosong");
+            $('#overlay').hide();
+            $('#data-pendapatan').hide();
+          } else {
+            var donut = new Morris.Donut({
+                  // ID of the element in which to draw the chart.
+                  element: 'data-pendapatan',
+                  //color.
+                  colors: ['#247BA0','#70C1B3','#434F12','#4E6054','#FF1654','#FFE016'],
+                  // the chart.
+                  data: data,
+                  
+                  hideHover: 'auto'
+            });
+            $('#overlay').hide();
+          }
+        },
+        error: function(){
+          alert("error");
+        }
+      });
+    } else {
+      alert("Pilih Tanggal Dulu");
+    }
+  }
+</script>
+
+<!-- Main content -->
+<section class="content">
+  <!-- Main row -->
+  <div class="row">
+    <div class="col-md-12">
+      <div class="box box-primary">
+        <div class="box-body chart-responsive">
+          <p class="col-sm-2">Cari Data</p>
+          <div class="col-sm-10">
+            <div class="form-inline">
+              <div class="form-group">
+                <input type="text" id="date_picker_awal" class="form-control date_picker_awal" placeholder="Tanggal awal" name="date_picker_awal" onchange="cek_tgl_awal(this.value)" required>
+                <input type="text" id="date_picker_akhir" class="form-control date_picker_akhir" placeholder="Tanggal akhir" name="date_picker_akhir" onchange="cek_tgl_akhir(this.value)" required>
+                <button class="btn btn-primary" type="submit" onclick="pilih_tgl()">Cari</button>
+              </div>
+            </div>
+          </div>
+          <div hidden class="chart" id="data-pendapatan" style="height: 450px;"></div>
+          <div hidden class="overlay" id="overlay">
+            <i class="fa fa-refresh fa-spin"></i>
+          </div>
+        </div>
+        <div class="box box-footer">
+          <h4 id="vtot" style="text-align: right"><h4>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.row -->
+</section><!-- /.content -->
+<?php $this->load->view("layout/footer"); ?>

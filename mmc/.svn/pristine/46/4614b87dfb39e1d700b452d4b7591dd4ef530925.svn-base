@@ -1,0 +1,291 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+require_once ("Secure_area.php");
+class Cdashboard extends Secure_area {
+	public function __construct() {
+		parent::__construct();
+		$this->load->model('mdashboard','',TRUE);
+	}
+	
+	////FORM VIEW
+	public function index()
+	{
+		$data['title'] = 'Dashboard '.$this->config->item('namars');
+
+		$this->load->view('dashboard/vdashboard',$data);
+	}
+	
+	public function pasien()
+	{
+		$data['title'] = 'Pasien '.$this->config->item('namars');
+		$this->load->view('dashboard/vpasien',$data);
+	}
+	
+	public function periodik_pendapatan()
+	{
+		$data['title'] = 'Pendapatan Periodik '.$this->config->item('namars');
+		$this->load->view('dashboard/vpendperiodik',$data);
+	}
+	
+	public function pendapatan()
+	{
+		$data['title'] = 'Pendapatan Keseluruhan '.$this->config->item('namars');
+		$this->load->view('dashboard/vpendkeseluruhan',$data);
+	}
+	
+	public function poliklinik()
+	{
+		$data['title'] = 'Kunjungan Pasien Poliklinik '.$this->config->item('namars');
+		$this->load->view('dashboard/vpoliklinik',$data);
+	}
+	
+	public function poli()
+	{
+		$data['title'] = 'Pasien Poliklinik '.$this->config->item('namars');
+		$data['pilihpoli'] = $this->mdashboard->get_data_poli()->result();
+
+		$this->load->view('dashboard/vpilihpoli',$data);
+	}
+	
+	public function diagnosa()
+	{
+		$data['title'] = '10 Diagnosa Terbanyak '.$this->config->item('namars');
+
+		$this->load->view('dashboard/vdiagnosa',$data);	
+	}
+	
+	public function farmasi()
+	{
+		$data['title'] = '10 Obat Terlaris '.$this->config->item('namars');
+
+		$this->load->view('dashboard/vfarmasi',$data);	
+	}
+
+	public function get_data_periodik(){
+		//$tahun_akhir=$this->input->post('tahun');
+		$tahun_akhir='2016';
+		$tahun_awal=$tahun_akhir-3;
+		$a=array();
+		$b=array();
+		$c=array();
+		$tableau=array();
+		$bulan=array('Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember');
+		$datajson=$this->mdashboard->get_data_periodik($tahun_awal, $tahun_akhir)->result();
+		
+		foreach($datajson as $row){
+			if(substr($row->bln,0,4)==$tahun_akhir-2){
+				$a[]=$row->pendapatan;
+			} else if(substr($row->bln,0,4)==$tahun_akhir-1){
+				$b[]=$row->pendapatan;
+			} else if(substr($row->bln,0,4)==$tahun_akhir){
+				$c[]=$row->pendapatan;
+			}
+		}
+	
+		for($i=0;$i<12;$i++){
+    		$tableau[]=array("y" => $bulan[$i],"a" => $a[$i], "b" => $b[$i], "c" => $c[$i]);
+		}
+
+	    echo json_encode($tableau);
+	}
+
+	public function get_data_pasien(){
+		$datajson=$this->mdashboard->get_data_pasien()->result();
+	    echo json_encode($datajson);
+	}
+	
+	public function get_data_pasien_range(){
+		$tgl_akhir=$this->input->post('tgl_akhir');
+		$tgl_awal=$this->input->post('tgl_awal');
+		// $datajson=$this->mdashboard->get_data_pasien_range('2017-02-01', '2017-02-28')->result();
+		$datajson=$this->mdashboard->get_data_pasien_range($tgl_awal, $tgl_akhir)->result();
+		$umum = "UMUM";
+		$jumlah_umum = "0";
+		$total_umum = "0";
+		$bpjs = "BPJS";
+		$jumlah_bpjs = "0";
+		$total_bpjs = "0";
+		$dijamin = "DIJAMIN";
+		$jumlah_dijamin = "0";
+		$total_dijamin = "0";
+
+		foreach ($datajson as $row) {
+			if($row->cara_bayar == "UMUM"){
+				$jumlah_umum = $row->jumlah;
+				$total_umum = $row->total;
+			}
+			if($row->cara_bayar == "BPJS"){
+				$jumlah_bpjs = $row->jumlah;
+				$total_bpjs = $row->total;
+			}
+			if($row->cara_bayar == "DIJAMIN"){
+				$jumlah_dijamin = $row->jumlah;
+				$total_dijamin = $row->total;
+			} 
+		}
+
+		$arrayhasil[] = array('cara_bayar' => "UMUM", 'jumlah' => $jumlah_umum, 'total' => $total_umum);
+		$arrayhasil[] = array('cara_bayar' => "BPJS", 'jumlah' => $jumlah_bpjs, 'total' => $total_bpjs);
+		$arrayhasil[] = array('cara_bayar' => "DIJAMIN", 'jumlah' => $jumlah_dijamin, 'total' => $total_dijamin);
+
+	    echo json_encode($arrayhasil);
+	}
+
+	public function get_data_kunjungan(){
+		$tgl_akhir=$this->input->post('tgl_akhir');
+		$tgl_awal=$this->input->post('tgl_awal');
+		$datajson=$this->mdashboard->get_data_kunjungan_poli($tgl_awal, $tgl_akhir)->result();
+	    echo json_encode($datajson);
+	}
+
+	public function get_data_kunjungan_perhari(){
+		$id_poli=$this->input->post('id_poli');
+		$tgl_akhir=$this->input->post('tgl_akhir');
+		$tgl_awal=$this->input->post('tgl_awal');
+		$datajson=$this->mdashboard->get_data_kunjungan_poli_perhari($id_poli, $tgl_awal, $tgl_akhir)->result();
+	    echo json_encode($datajson);
+	}
+
+	public function get_data_pendapatan(){
+		$tgl_akhir=$this->input->post('tgl_akhir');
+		$tgl_awal=$this->input->post('tgl_awal');
+		$datajson=$this->mdashboard->get_data_pendapatan($tgl_awal, $tgl_akhir)->result();
+	    echo json_encode($datajson);
+	}
+
+	public function get_data_diagnosa(){
+		$id_rawat=$this->input->post('id_rawat');
+		$tgl_akhir=$this->input->post('tgl_akhir');
+		$tgl_awal=$this->input->post('tgl_awal');
+		//$datajson=$this->mdashboard->get_data_diagnosa_irj()->result();
+		if($id_rawat=="ird"){
+			$datajson=$this->mdashboard->get_data_diagnosa_ird($tgl_awal, $tgl_akhir)->result();
+		}else if($id_rawat=="irj"){
+			$datajson=$this->mdashboard->get_data_diagnosa_irj($tgl_awal, $tgl_akhir)->result();
+		}else{
+			$datajson=$this->mdashboard->get_data_diagnosa_iri($tgl_awal, $tgl_akhir)->result();
+		}
+
+	    echo json_encode($datajson);
+	}
+
+	public function get_data_vtot(){
+		$tgl_akhir=$this->input->post('tgl_akhir');
+		$tgl_awal=$this->input->post('tgl_awal');
+		$datajson=$this->mdashboard->get_data_vtot($tgl_awal, $tgl_akhir)->row()->vtot;
+	    echo json_encode($datajson);
+	}
+
+	public function get_data_obat(){
+		$tgl_akhir=$this->input->post('tgl_akhir');
+		$tgl_awal=$this->input->post('tgl_awal');
+		$datajson=$this->mdashboard->get_data_obat($tgl_awal, $tgl_akhir)->result();
+	    echo json_encode($datajson);
+	}
+
+	//EXPORT 
+	public function export_excel($tgl_awal='', $tgl_akhir='')
+	{
+		$data['title'] = '10 Diagnosa Terbanyak';
+
+		////EXCEL 
+		$this->load->library('Excel');  
+		   
+		// Create new PHPExcel object  
+		$objPHPExcel = new PHPExcel();   
+		   
+		// Set document properties  
+		$objPHPExcel->getProperties()->setCreator($this->config->item('namars'))  
+		        ->setLastModifiedBy($this->config->item('namars'))  
+		        ->setTitle("10 Diagnosa Terbanyak ")  
+		        ->setSubject("10 Diagnosa Terbanyak  Document")  
+		        ->setDescription("10 Diagnosa Terbanyak  for Office 2007 XLSX, generated by HMIS.")  
+		        ->setKeywords("")  
+		        ->setCategory("10 Diagnosa Terbanyak");  
+
+		//$objReader = PHPExcel_IOFactory::createReader('Excel2007');    
+		//$objPHPExcel = $objReader->load("project.xlsx");
+		   
+		$objReader= PHPExcel_IOFactory::createReader('Excel2007');
+		$objReader->setReadDataOnly(true);
+		
+		$data_irj=$this->mdashboard->get_excel_diagnosa_irj($tgl_awal,$tgl_akhir)->result();
+		$data_ird=$this->mdashboard->get_excel_diagnosa_ird($tgl_awal,$tgl_akhir)->result();
+		$data_iri=$this->mdashboard->get_excel_diagnosa_iri($tgl_awal,$tgl_akhir)->result();
+			
+		$objPHPExcel=$objReader->load(APPPATH.'third_party/10_diagnosa.xlsx');
+		// Set active sheet index to the first sheet, so Excel opens this as the first sheet  
+		$objPHPExcel->setActiveSheetIndex(0);  
+		// Add some data  
+		$objPHPExcel->getActiveSheet()->SetCellValue('A1', $data['title']);
+		$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'Tanggal : '.date('d-m-Y',strtotime($tgl_awal)).' s/d '.date('d-m-Y',strtotime($tgl_akhir)));
+		$objPHPExcel->getActiveSheet()->SetCellValue('A4', 'Diagnosa Rawat Jalan');
+		$objPHPExcel->getActiveSheet()->SetCellValue('F4', 'Diagnosa Rawat Darurat');
+		$objPHPExcel->getActiveSheet()->SetCellValue('K4', 'Diagnosa Rawat Inap');
+		$objPHPExcel->getActiveSheet()->SetCellValue('A5', 'No');
+		$objPHPExcel->getActiveSheet()->SetCellValue('B5', 'Id');
+		$objPHPExcel->getActiveSheet()->SetCellValue('C5', 'Nama');
+		$objPHPExcel->getActiveSheet()->SetCellValue('D5', 'Jumlah');
+		$objPHPExcel->getActiveSheet()->SetCellValue('F5', 'No');
+		$objPHPExcel->getActiveSheet()->SetCellValue('G5', 'Id');
+		$objPHPExcel->getActiveSheet()->SetCellValue('H5', 'Nama');
+		$objPHPExcel->getActiveSheet()->SetCellValue('I5', 'Jumlah');
+		$objPHPExcel->getActiveSheet()->SetCellValue('K5', 'No');
+		$objPHPExcel->getActiveSheet()->SetCellValue('L5', 'Id');
+		$objPHPExcel->getActiveSheet()->SetCellValue('M5', 'Nama');
+		$objPHPExcel->getActiveSheet()->SetCellValue('N5', 'Jumlah');
+		$rowCount=6;
+		$i=1;
+		foreach($data_irj as $row){
+			$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $i);
+			$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $row->id);
+			$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $row->nama);
+			$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $row->jumlah);
+		 	$i++;
+		 	$rowCount++;
+		}
+		$rowCount=6;
+		$i=1;
+		foreach($data_ird as $row){
+			$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $i);
+			$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $row->id);
+			$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, $row->nama);
+			$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, $row->jumlah);
+		 	$i++;
+			$rowCount++;
+		}
+		$rowCount=6;
+		$i=1;
+		foreach($data_iri as $row){
+			$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, $i);
+			$objPHPExcel->getActiveSheet()->SetCellValue('L'.$rowCount, $row->id);
+			$objPHPExcel->getActiveSheet()->SetCellValue('M'.$rowCount, $row->nama);
+			$objPHPExcel->getActiveSheet()->SetCellValue('N'.$rowCount, $row->jumlah);
+		 	$i++;
+		 	$rowCount++;
+		}
+		header('Content-Disposition: attachment;filename="10_Diagnosa_Terbanyak.xlsx"');  
+		
+		// Rename worksheet (worksheet, not filename)  
+		$objPHPExcel->getActiveSheet()->setTitle('10 Diagnosa');  
+		   
+		   
+		   
+		// Redirect output to a client’s web browser (Excel2007)  
+		//clean the output buffer  
+		ob_end_clean();  
+		   
+		//this is the header given from PHPExcel examples.   
+		//but the output seems somewhat corrupted in some cases.  
+		//header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');  
+		//so, we use this header instead.  
+		header('Content-type: application/vnd.ms-excel');  
+		header('Cache-Control: max-age=0');  
+		   
+		$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');  
+		$objWriter->save('php://output');  
+	}
+}
+
+?>

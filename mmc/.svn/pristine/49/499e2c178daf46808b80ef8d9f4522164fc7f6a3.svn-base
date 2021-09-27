@@ -1,0 +1,74 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+  class Frmmstok extends CI_Model{
+    function __construct(){
+    parent::__construct();
+  }
+
+
+
+   function get_all($id_obat) {
+    $query = $this->db->query("SELECT id_obat, nm_obat, hargajual, faktorsatuan FROM master_obat ORDER BY nm_obat");
+    return $query->result();
+    }
+
+   function get($id_obat) {
+    $query = $this->db->get_where('master_obat', array('id_obat'=>$id_obat));
+    return $query->row();
+   }
+  
+   function get_all_data_receiving(){
+      return $this->db->query("SELECT a.receiving_id, a.receiving_time, b.company_name , (SELECT SUM(quantity_purchased) FROM receivings_items WHERE
+        receiving_id=a.receiving_id GROUP BY receiving_id) as total FROM receivings as a, suppliers as b WHERE a.supplier_id=b.person_id
+        ORDER BY a.receiving_id");
+   }
+       
+   function get_receivings($no_faktur) {
+     $query = $this->db->get_where('receivings', array('no_faktur'=>$no_faktur));
+     return $query;
+    }
+
+    function getdata_gudang_inventory(){
+      return $this->db->query("SELECT * , (SELECT nm_obat FROM master_obat WHERE id_obat=a.id_obat) as nm_obat , (SELECT nama_gudang FROM master_gudang WHERE id_gudang=a.id_gudang) as nama_gudang
+        FROM gudang_inventory as a order by nm_obat");
+    }
+
+    function getdata_gudang_inventory_by_role($role){
+      return $this->db->query("SELECT * , (SELECT nm_obat FROM master_obat WHERE id_obat=a.id_obat) as nm_obat , (SELECT obatalkes FROM master_obat WHERE id_obat=a.id_obat) as jenis_barang, (SELECT nama_gudang FROM master_gudang WHERE id_gudang=a.id_gudang) as nama_gudang
+        FROM gudang_inventory as a WHERE a.id_gudang='$role' order by nm_obat");
+    }
+
+    function get_roleid($userid){
+      return $this->db->query("Select roleid from dyn_role_user where userid = '".$userid."'");
+    }
+
+    function get_gudangid($userid){
+      return $this->db->query("Select id_gudang from dyn_gudang_user where userid = '".$userid."'");
+    }
+
+    function getitem_obat($id_obat){
+			return $this->db->query("SELECT * FROM master_obat WHERE id_obat='".$id_obat."'");
+		}
+
+    function getnama_gudang($id_gudang){
+      return $this->db->query("SELECT * FROM master_gudang WHERE id_gudang='".$id_gudang."'");
+    }
+
+    function get_data_gudang(){
+      return $this->db->query("SELECT * FROM master_gudang ORDER BY id_gudang");
+    }
+
+    function get_data_gudang_detail($nm_gudang){
+      return $this->db->query("SELECT * , (SELECT nm_obat FROM master_obat WHERE id_obat=a.id_obat) as nm_obat , 
+(SELECT nama_gudang FROM master_gudang WHERE id_gudang=a.id_gudang) as nama_gudang
+        FROM gudang_inventory as a 
+        where a.id_gudang=(SELECT id_gudang FROM master_gudang WHERE nama_gudang='$nm_gudang')
+        order by batch_no");
+    }
+
+    function data_gudang($batch_no){
+      return $this->db->query("SELECT a.nm_obat, b.batch_no , b.qty from master_obat as a, gudang_inventory as b where a.id_obat = b.id_obat and b.batch_no ='$batch_no'");
+    }
+}
+
+?>

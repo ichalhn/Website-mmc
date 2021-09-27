@@ -1,0 +1,162 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+
+	class Frmmlaporan extends CI_Model{
+		function __construct(){
+			parent::__construct();
+		}
+
+
+
+		function get_data_keuangan_tgl($tgl){
+			return $this->db->query("SELECT no_register, item_obat, nama_obat, qty, vtot
+				FROM resep_pasien
+				WHERE left(tgl_kunjungan,10) = '$tgl'
+				AND cetak_kwitansi='1'
+				ORDER BY item_obat");
+		}
+
+		// function get_data_periode_bln($bln){
+		// 	return $this->db->query("SELECT left(tgl_kunjungan,10) as tgl, count(1) as jum_pem
+		// 		FROM resep_pasien
+		// 		WHERE left(tgl_kunjungan,7)  = '$bln'
+		// 		GROUP BY tgl");
+		// }
+
+		// function get_data_keuangan_bln($bln){
+		// 	return $this->db->query("SELECT left(tgl_kunjungan,10) as tgl, item_obat, nama_obat, biaya_obat, count(item_obat) as jumlah, sum(vtot) as total
+		// 		FROM resep_pasien
+		// 		WHERE left(tgl_kunjungan,7) = '$bln'
+		// 		GROUP BY tgl, item_obat
+		// 		ORDER BY item_obat");
+		// }
+
+		function get_data_periode_bln_bycarabayar($bln, $cara_bayar){
+			return $this->db->query("SELECT left(tgl_kunjungan,10) as tgl, count(1) as jum_pem
+				FROM resep_pasien
+				WHERE left(tgl_kunjungan,7)  = '$bln' and cara_bayar='$cara_bayar'
+				GROUP BY tgl");
+		}
+
+		function get_data_keuangan_bln_bycarabayar($bln, $cara_bayar){
+			return $this->db->query("SELECT left(tgl_kunjungan,10) as tgl, item_obat, nama_obat, biaya_obat, cara_bayar, count(*) as jumlah, sum(vtot) as total
+				FROM resep_pasien
+				WHERE left(tgl_kunjungan,7) = '$bln' and cara_bayar='$cara_bayar'
+				GROUP BY item_obat, tgl
+				ORDER BY tgl, item_obat");
+		}
+
+		function get_data_periode_thn($thn){
+			return $this->db->query("SELECT left(receivings.receiving_time,7) as bln, count(1) as jum_pem
+				FROM receivings
+				WHERE left(receivings.receiving_time,4) ='$thn'
+				GROUP BY bln");
+		}
+
+		function get_data_keuangan_thn($thn){
+			return $this->db->query("SELECT left(receivings.receiving_time,7) as bln, suppliers.company_name, 
+receivings_items.description, count(receivings_items.quantity_purchased) as jumlah, 
+sum(receivings_items.item_cost_price) as total
+FROM receivings, receivings_items, suppliers
+WHERE receivings.receiving_id = receivings_items.receiving_id 
+and suppliers.person_id = receivings.supplier_id and left(receivings.receiving_time,4) = '$thn'
+GROUP BY bln, suppliers.company_name");
+		}
+
+		function get_data_periode_thn_bycarabayar($thn, $cara_bayar){
+			return $this->db->query("SELECT left(tgl_kunjungan,7) as bln, count(1) as jum_pem
+				FROM resep_pasien
+				WHERE left(tgl_kunjungan,4)  = '$thn' and cara_bayar='$cara_bayar'
+				GROUP BY bln");
+		}
+
+		function get_data_keuangan_thn_bycarabayar($thn, $cara_bayar){
+			return $this->db->query("SELECT left(tgl_kunjungan,7) as bln, item_obat, nama_obat, biaya_obat, cara_bayar, count(*) as jumlah, sum(vtot) as total
+				FROM resep_pasien
+				WHERE left(tgl_kunjungan,4) = '$thn' and cara_bayar='$cara_bayar'
+				GROUP BY item_obat, bln
+				ORDER BY bln, item_obat");
+		}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////// edited ibnu
+
+		function get_data_keuangan_bln($bln){
+			return $this->db->query("SELECT left(receivings.receiving_time,10) as tgl, suppliers.company_name, receivings_items.description, count(receivings_items.quantity_purchased) as jumlah, sum(receivings_items.item_cost_price) as total
+				FROM receivings, receivings_items, suppliers
+				WHERE receivings.receiving_id = receivings_items.receiving_id and suppliers.person_id = receivings.supplier_id and left(receivings.receiving_time,7) = '$bln'
+				GROUP BY tgl, suppliers.company_name");
+		}
+
+		function row_table_perbln($bln){
+			return $this->db->query("SELECT Count(*)
+				FROM receivings_items, receivings, suppliers
+				WHERE receivings.receiving_id = receivings_items.receiving_id AND left(receivings.tgl_kunjungan,7)  = '$bln'
+				GROUP BY suppliers.company_name");
+		}
+
+		function get_data_periode_bln($bln){
+			return $this->db->query("SELECT left(receivings.receiving_time,10) as tgl, count(1) as jum_pem
+				FROM receivings
+				WHERE left(receivings.receiving_time,7) ='$bln'
+				GROUP BY tgl");
+		}
+		function get_data_keu_tindakan_today(){
+			return $this->db->query("SELECT receivings.supplier_id, a.company_name, b.description, b.quantity_purchased, b.item_cost_price 
+				FROM suppliers as a, receivings_items as b, receivings 
+				WHERE a.person_id=receivings.supplier_id AND b.receiving_id=receivings.receiving_id and left(receivings.receiving_time,10)=left(now(),10) group by receivings.supplier_id");
+		}
+
+		function get_data_keu_tind_tgl($tgl){
+			return $this->db->query("SELECT receivings.supplier_id, a.company_name, b.description, b.quantity_purchased, b.item_cost_price 
+				FROM suppliers as a, receivings_items as b, receivings 
+				WHERE a.person_id=receivings.supplier_id AND b.receiving_id=receivings.receiving_id and left(receivings.receiving_time,10)='$tgl' group by receivings.supplier_id");
+		}
+
+		function get_data_keu_detail_tgl($tgl){
+			return $this->db->query("SELECT receivings.supplier_id, a.company_name, b.description, b.quantity_purchased, b.item_cost_price 
+				FROM suppliers as a, receivings_items as b, receivings 
+				WHERE a.person_id=receivings.supplier_id AND b.receiving_id=receivings.receiving_id and left(receivings.receiving_time,10)='$tgl'");
+		}
+
+		function get_data_keu_tind_bln($bln){
+			return $this->db->query("SELECT DATE_FORMAT(LEFT(receivings.receiving_time,10),'%d %M %Y') AS hari, count(receivings_items.description) AS jum_kunj, LEFT(receivings.receiving_time,10) as tgl, SUM(receivings_items.item_cost_price) as total 
+										FROM receivings_items, receivings
+										WHERE receivings_items.receiving_id=receivings.receiving_id and LEFT(receivings.receiving_time,7)='$bln'
+										GROUP BY hari");
+		}
+
+		function get_data_keu_tind_thn($thn){
+			return $this->db->query("SELECT MONTHNAME(LEFT(receivings.receiving_time,10)) AS bulan, count(receivings_items.description) AS jum_kunj, LEFT(receivings.receiving_time,10) as tgl, SUM(receivings_items.item_cost_price) as total 
+FROM receivings_items, receivings
+WHERE receivings_items.receiving_id=receivings.receiving_id and LEFT(receivings.receiving_time,4)='$thn'
+GROUP BY bulan");
+		}
+/////////////////////////////////////////////////
+		function row_table_pertgl($tgl){
+			return $this->db->query("SELECT Count(*)
+				FROM resep_pasien
+				WHERE  left(tgl_kunjungan,10)  = '$tgl'
+				GROUP BY item_obat");
+		}
+		
+		// function row_table_pertgl_bycarabayar($tgl, $cara_bayar){
+		// 	return $this->db->query("SELECT Count(*)
+		// 		FROM resep_pasien
+		// 		WHERE  left(tgl_kunjungan,10)  = '$tgl'
+		// 		AND cara_bayar='$cara_bayar'
+		// 		GROUP BY item_obat");
+		// }
+
+		// function row_table_perbln($bln){
+		// 	return $this->db->query("SELECT Count(*)
+		// 		FROM resep_pasien
+		// 		WHERE  left(tgl_kunjungan,7)  = '$bln'
+		// 		GROUP BY item_obat");
+		// }
+
+		// function row_table_perbln_bycarabayar($bln, $cara_bayar){
+		// 	return $this->db->query("SELECT Count(*)
+		// 		FROM resep_pasien
+		// 		WHERE  left(tgl_kunjungan,7)  = '$bln'
+		// 		AND cara_bayar='$cara_bayar'
+		// 		GROUP BY item_obat");
+	}
+?>

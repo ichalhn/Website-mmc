@@ -1,0 +1,265 @@
+<script src="<?php echo site_url('asset/plugins/ckeditor/ckeditor.js'); ?>"></script>
+<script type='text/javascript'>
+var site = "<?php echo site_url();?>";
+function cek_utama() {
+	    $.ajax({
+	        type: "POST",
+	        url: "<?php echo base_url().'irj/rjcpelayanan/cek_utama'; ?>",
+	        dataType: "JSON",
+	        data: {"no_register" : "<?php echo $no_register;?>"},
+	        success: function(data){   
+				if (data == '1') {
+					$("option[value='utama']").attr("disabled", "disabled");
+				} else if (data == '2') {
+					$("option[value='utama']").removeAttr("disabled");
+				}
+	        },
+	        error:function(event, textStatus, errorThrown) {      
+	            console.log('Error Message: '+ textStatus + ' , HTTP Error: '+errorThrown);
+	        },
+	        timeout: 0
+	    });
+}
+$(document).ready(function() { 
+	cek_utama();
+	$("#form_add_procedure").submit(function(event) {
+	    document.getElementById("btn-procedure").innerHTML = '<i class="fa fa-spinner fa-spin"></i> Loading...';
+	    $.ajax({
+	        type: "POST",
+	        url: "<?php echo base_url().'irj/rjcpelayanan/insert_procedure'; ?>",
+	        dataType: "JSON",
+	        data: $('#form_add_procedure').serialize(),
+	        success: function(data){   
+			    if (data == true) {
+			    	document.getElementById("btn-procedure").innerHTML = '<i class="fa fa-floppy-o"></i> Simpan';
+			        table_procedure.ajax.reload();
+			        swal("Sukses", "Prosedur berhasil disimpan.", "success");
+			    } else {
+			    	document.getElementById("btn-procedure").innerHTML = '<i class="fa fa-floppy-o"></i> Simpan';
+					swal("Error", "Gagal menginput prosedur. Silahkan coba lagi.", "error");	        	
+			    }
+			    cek_utama();
+	        },
+	        error:function(event, textStatus, errorThrown) { 
+	        	document.getElementById("btn-procedure").innerHTML = '<i class="fa fa-floppy-o"></i> Simpan';       
+	            console.log('Error Message: '+ textStatus + ' , HTTP Error: '+errorThrown);
+	        },
+	        timeout: 0
+	    });
+	  event.preventDefault();
+	});
+
+	var no_medrec = document.getElementById("no_medrec").value;
+    var table_procedure = $('#tabel_procedure').DataTable({ 
+      "processing": true,
+      "serverSide": true,
+      "order": [],
+      "lengthMenu": [
+        [ 10, 25, 50, -1 ],
+        [ '10 rows', '25 rows', '50 rows', 'Show all' ]
+      ],
+      "lengthMenu": [ [10, 25, 50, -1], [10, 25, 50, "All"] ],
+      "ajax": {
+        "url": "<?php echo site_url('irj/rjcpelayanan/procedure_pasien')?>/" + no_medrec,
+        "type": "POST",
+        "dataType": 'JSON',
+        "data": function (data) {
+          data.no_medrec = no_medrec;
+        }        
+      },
+      "columnDefs": [
+      { 
+        "orderable": false, //set not orderable
+        "targets": 4 // column index 
+      }
+      ],
+   
+    });
+
+	$(document).on("click",".delete_procedure",function() {
+	      var getLink = $(this).attr('href');
+	      swal({
+	        title: "Hapus Prosedur",
+	        text: "Yakin akan menghapus prosedur tersebut?",
+	        type: "warning",
+	        showCancelButton: true,
+	        confirmButtonColor: "#DD6B55",
+	        confirmButtonText: "Hapus",
+	        showLoaderOnConfirm: true,
+	        closeOnConfirm: true
+	        }, function() {
+				$.ajax({
+					type: 'POST',
+					url: getLink,
+					dataType:'JSON',
+			        success: function(data){
+			        	if (data == true) {
+			        		table_procedure.ajax.reload();
+			        		swal("Sukses", "Prosedur berhasil dihapus.", "success");
+			        	} else {
+							swal("Error", "Gagal menghapus data. Silahkan coba lagi.", "error");	        	
+			        	}
+			        	cek_utama();
+			        },
+			        error:function(event, textStatus, errorThrown) {
+			            console.log('Error Message: '+ textStatus + ' , HTTP Error: '+errorThrown);
+			        },
+				});           
+	      });
+	      return false;
+	    });    
+
+	$(".select2").select2();
+    CKEDITOR.replace('catatan');
+	
+	//-----------------------------------------------Data Table
+    $('#tabel_tindakan').DataTable();
+	$('#tabel_diagnosa').DataTable();
+	$('#tabel_lab').DataTable();
+	$('#tabel_pa').DataTable();
+	$('#tabel_rad').DataTable();
+	$('#tabel_ok').DataTable();
+	$('#tabel_resep').DataTable();
+	$('#tabel_obat1').DataTable();
+	$('#tabel_obat2').DataTable();
+    $('#tabel_obat3').DataTable();
+	//---------------------------------------------------------
+	
+	$('.auto_diagnosa_pasien').autocomplete({
+		serviceUrl: site+'iri/ricstatus/data_icd_1',
+		onSelect: function (suggestion) {
+			$('#id_diagnosa').val(suggestion.id_icd+' - '+suggestion.nm_diagnosa);
+			$('#diagnosa').val(''+suggestion.id_icd+'@'+suggestion.nm_diagnosa);
+			
+		}
+	});
+	$('.auto_procedure_pasien').autocomplete({
+		serviceUrl: site+'iri/ricstatus/data_icd9cm',
+		onSelect: function (suggestion) {
+			$('#id_procedure').val(suggestion.id_tind+' - '+suggestion.nm_tindakan);
+			$('#procedure').val(''+suggestion.id_tind+'@'+suggestion.nm_tindakan);
+			
+		}
+	});	
+	//CEK DATA LAB DAN RESEP-------------------------------------------
+	var a_lab="<?php echo $a_lab ?>";
+	var a_pa="<?php echo $a_pa ?>";
+	var a_obat="<?php echo $a_obat ?>";
+	var a_rad="<?php echo $a_rad ?>";
+	
+	//------------------------------------------------------------------
+});
+
+
+function pilih_tindakan(tindakan) {
+	//alert(tindakan);	
+	if(tindakan!=''){
+		var result = tindakan.split('@');
+		var id_tindakan = result[0];
+		
+		if(id_tindakan.substring(0,2)=='BA') {
+			$("#dokterDiv").hide();
+			document.getElementById("id_dokter").required = false;
+		} else {
+			$("#dokterDiv").show();
+			document.getElementById("id_dokter").required = true;
+		}
+		
+		$.ajax({
+			type:'POST',
+			dataType: 'json',
+			url:"<?php echo base_url('irj/rjcpelayanan/get_biaya_tindakan')?>",
+			data: {
+				id_tindakan: id_tindakan,
+				kelas : "<?php echo $kelas_pasien ?>"
+			},
+			success: function(data){
+				//alert(data);
+				$('#biaya_tindakan').val(data[0]);
+				$('#biaya_tindakan_hide').val(data[0]);
+				$('#biaya_alkes').val(data[1]);
+				$('#biaya_alkes_hide').val(data[1]);
+				$('#qtyind').val(1);
+				vtot = parseInt(data[0])+parseInt(data[1]);
+				$('#vtot').val(vtot);
+				$('#vtot_hide').val(vtot);
+			},
+			error: function(xhr, status, error) {
+				alert(xhr.responseText);
+			}
+	    });
+	}
+	
+	
+}
+
+function pilih_tindakan_lab(id_tindakan) {
+   // alert("<?php echo site_url('irj/rjcpelayanan/get_biaya_tindakan'); ?>");
+	$.ajax({
+		type:'POST',
+		dataType: 'json',
+		url:"<?php echo base_url('lab/labcdaftar/get_biaya_tindakan')?>",
+		data: {
+			id_tindakan: id_tindakan,
+			kelas : "<?php echo $kelas_pasien ?>"
+		},
+		success: function(data){
+			//alert(data);
+			$('#biaya_lab').val(data);
+			$('#biaya_lab_hide').val(data);
+			$('#qty_lab').val(1);
+			$('#vtot_lab').val(data);
+			$('#vtot_lab_hide').val(data);
+		},
+		error: function(){
+			alert("error");
+		}
+    });
+}
+
+function set_total() {
+	var total = $("#biaya_tindakan").val() * $("#qtyind").val() + $("#biaya_alkes").val() * $("#qtyind").val() ;	
+	$('#vtot').val(total);
+	$('#vtot_hide').val(total);
+}
+
+function set_total_lab() {
+	var total = $("#biaya_lab").val() * $("#qty_lab").val();	
+	$('#vtot_lab').val(total);
+	$('#vtot_lab_hide').val(total);
+}
+
+function pilih_obat(id_resep) {
+	$.ajax({
+		type:'POST',
+		dataType: 'json',
+		url:"<?php echo base_url('farmasi/Frmcdaftar/get_biaya_tindakan')?>",
+		data: {
+			id_resep: id_resep
+		},
+		success: function(data){
+		
+			var num = data*1.3*1.1;
+			$('#biaya_obat').val(num.toFixed(2));
+			$('#biaya_obat').maskMoney('mask');
+			$('#biaya_obat_hide').val(num.toFixed(2));
+			$("#qtyResep").val('1');
+		
+			$('#vtot_resep').val(num.toFixed(2));
+			$('#vtot_resep').maskMoney('mask' );
+			$('#vtot_resep_hide').val(num.toFixed(2));
+		},
+		error: function(){
+			alert("error");
+		}
+    });
+}
+
+function set_total_resep() {
+	var total = $("#biaya_obat_hide").val() * $("#qtyResep").val();
+	$('#vtot_resep').val(total.toFixed(2));
+	$('#vtot_resep').maskMoney('mask');
+	$('#vtot_resep_hide').val(total.toFixed(2));
+}
+
+</script>

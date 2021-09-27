@@ -1,0 +1,1010 @@
+ <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+include(dirname(dirname(__FILE__)).'/Tglindo.php');
+
+require_once(APPPATH.'controllers/Secure_area.php');
+class Rjclaporan extends Secure_area {
+	public function __construct() {
+		parent::__construct();
+		$this->load->model('irj/rjmregistrasi','',TRUE);
+		$this->load->model('irj/Rjmpencarian','',TRUE);
+		$this->load->model('irj/Rjmpelayanan','',TRUE);
+		$this->load->model('irj/Rjmkwitansi','',TRUE);
+		$this->load->model('irj/Rjmlaporan','',TRUE);
+		$this->load->model('iri/rimpasien');
+		$this->load->model('ird/ModelKwitansi','',TRUE);
+		$this->load->helper('pdf_helper');
+		
+	}
+	public function index()
+	{
+		redirect('irj/Rjcregistrasi','refresh');
+	}
+	public function lap_perpoli(){
+		$data['title'] = 'Laporan Kasir Per Poli';
+		$tgl_awal = $this->input->post('tgl_awal');
+		$jam_awal = $this->input->post('jam_awal');
+		$tgl_akhir = $this->input->post('tgl_akhir');
+		$jam_akhir = $this->input->post('jam_akhir');
+
+		$tgl_awal_gabung = $tgl_awal." ".$jam_awal;
+		$tgl_akhir_gabung = $tgl_akhir." ".$jam_akhir;
+
+		if($tgl_awal==''){
+			$tgl_awal = date("Y-m-d");
+			$tgl_akhir = date("Y-m-d");
+			// $data['list_keluar_masuk'] = $this->rimpasien->get_total_pendapatan_by_range_date($tgl_awal,$tgl_akhir);
+			$jam_awal='00:00';
+			$jam_akhir='23:59';
+			$tgl_awal_gabung = $tgl_awal." 00:00";
+			$tgl_akhir_gabung = $tgl_akhir." 23:59";
+		}
+
+		$data['tgl_awal'] = $tgl_awal_gabung;
+		$data['tgl_akhir'] = $tgl_akhir_gabung;
+
+		$data['tgl_awal_show'] = date('d F Y',strtotime($tgl_awal))." - ".$jam_awal;//$tgl_awal_lengkap;
+		$data['tgl_akhir_show'] = date('d F Y',strtotime($tgl_akhir))." - ".$jam_akhir;//
+
+		$data['list_irj'] = $this->Rjmlaporan->get_pendapatan_perpoli($tgl_awal_gabung,$tgl_akhir_gabung);
+		$this->load->view('irj/list_pendapatan_kasir',$data);
+	}
+
+
+	public function cetak_laporan_harian_kasir_excel($tgl_awal='',$tgl_akhir=""){
+	  require_once (APPPATH.'third_party/PHPExcel.php');
+
+      set_time_limit(0);
+
+      $tgl_awal = urldecode($tgl_awal);
+      $tgl_akhir = urldecode($tgl_akhir);
+
+      //load our new PHPExcel library
+      //$this->load->library('excel');
+      //$this->excel = new PHPExcel();
+
+      $excel = PHPExcel_IOFactory::load("./download/inap/laporan/pembayaran/template_pendapatan_harian_kasir.xlsx");
+
+      //activate worksheet number 1
+      $excel->setActiveSheetIndex(0);
+      //name the worksheet
+      $excel->getActiveSheet()->setTitle('Worksheet 1');
+
+      //ambil semua data pendapatan     
+	$list_keluar_irj = $this->Rjmlaporan->get_pendapatan_perpoli($tgl_awal,$tgl_akhir);
+      //print_r($data_pasien_keluar_tanggal[0]);exit;
+      $row = 5;
+      
+       	$tgl_indo = new Tglindo();
+
+  		$bulan_show = $tgl_indo->bulan(substr($tgl_awal,5,2));
+		$tahun_show = substr($tgl_awal,0,4);
+		$tanggal_show = substr($tgl_awal,8,2);
+		$jam_show = substr($tgl_awal,11,5);
+		$tgl_awal_lengkap = $tanggal_show." ".$bulan_show." ".$tahun_show." - ".$jam_show;
+
+		$bulan_show = $tgl_indo->bulan(substr($tgl_akhir,5,2));
+		$tahun_show = substr($tgl_akhir,0,4);
+		$tanggal_show = substr($tgl_akhir,8,2);
+		$jam_show = substr($tgl_akhir,11,5);
+		$tgl_akhir_lengkap = $tanggal_show." ".$bulan_show." ".$tahun_show." - ".$jam_show;
+
+
+      $excel->getActiveSheet()->setCellValue('A1', "Laporan Pendapatan Kasir ",PHPExcel_Cell_DataType::TYPE_STRING);
+      $excel->getActiveSheet()->setCellValue('A2', "Tanggal : ".date('d F Y', strtotime($tgl_awal))." - ".date('d F Y', strtotime($tgl_akhir)),PHPExcel_Cell_DataType::TYPE_STRING);
+
+      $excel->getActiveSheet()->getStyle('A5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('A5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('B5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('B5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('C5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('C5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('D5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('D5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+     
+      /*$excel->getActiveSheet()->getStyle('F5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('F5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('G5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('G5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('H5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('H5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('I5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('I5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('J5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('J5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);*/
+
+      
+      $excel->getActiveSheet()->setAutoFilter('A5:J5');
+        $total = 0;
+	  	$jumlah = 0;
+     	$i=1;
+      //RAWAT JALAN
+      foreach ($list_keluar_irj as $r) {
+     	$total = $total + $r['total'];
+  		$jumlah= $jumlah + $r['jumlah'];
+
+        $row++;
+        $excel->getActiveSheet()->setCellValue('A'.$row, $i++,PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('B'.$row, $r['nm_poli'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('C'.$row, $r['jumlah'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('D'.$row, number_format($r['total'],0),PHPExcel_Cell_DataType::TYPE_STRING);    
+      }
+
+      $row++;
+      $excel->getActiveSheet()->setCellValue('B'.$row, "Total ",PHPExcel_Cell_DataType::TYPE_STRING);
+      $excel->getActiveSheet()->setCellValue('C'.$row, $jumlah,PHPExcel_Cell_DataType::TYPE_STRING);
+      $excel->getActiveSheet()->setCellValue('D'.$row, number_format($total,0),PHPExcel_Cell_DataType::TYPE_STRING);
+
+        // //change the font size
+        // $this->excel->getActiveSheet()->getStyle('A1')->getFont()->setSize(20);
+        // //make the font become bold
+        // $this->excel->getActiveSheet()->getStyle('A1')->getFont()->setBold(true);
+        // //merge cell A1 until D1
+        // $this->excel->getActiveSheet()->mergeCells('A1:D1');
+        // //set aligment to center for that merged cell (A1 to D1)
+        // $this->excel->getActiveSheet()->getStyle('A1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+	  $newDate = date("d-m-Y", strtotime($tgl_awal));
+      $filename='Pendapatan_Kasir_Tanggal_'.$newDate.'.xlsx'; //save our workbook as this file name
+      ob_end_clean();  
+      header('Content-Type: application/vnd.ms-excel'); //mime type
+      header('Content-Disposition: attachment;filename="'.$filename.'"'); //tell browser what's the file name
+      header('Cache-Control: max-age=0'); //no cache
+      //save it to Excel5 format (excel 2003 .XLS file), change this to 'Excel2007' (and adjust the filename extension, also the header mime type)
+      //if you want to save it as .XLSX Excel 2007 format
+      $objWriter = PHPExcel_IOFactory::createWriter($excel, 'Excel2007');  
+      //force user to download the Excel file without writing it to server's HD
+      $objWriter->save('php://output');
+	}
+
+	public function kunj_pasien()
+	{	   
+		if($this->input->post('date0')!=''){
+			$data['date_awal'] = $this->input->post('date0');
+		}else {
+			$data['date_awal'] = date('Y-m-d', strtotime('-1 days'));
+		}
+		
+		if($this->input->post('date1')!=''){
+			$data['date_akhir'] = $this->input->post('date1');
+		}else {
+			$data['date_akhir'] = date('Y-m-d');
+		}		
+		//	echo $data['date_awal'];echo $data['date_akhir'];
+		$data['title'] = 'Laporan Kunjungan Pasien <b>'.date('d-m-Y', strtotime($data['date_awal'])).' s/d '.date('d-m-Y', strtotime($data['date_akhir'])).'</b>';
+			
+		$data['msk_iri1']=$this->Rjmlaporan->get_data_iri_masuk_lt1($data['date_awal'],$data['date_akhir'])->result();
+		$data['msk_iri2']=$this->Rjmlaporan->get_data_iri_masuk_lt2($data['date_awal'],$data['date_akhir'])->result();
+		$data['msk_iri3']=$this->Rjmlaporan->get_data_iri_masuk_lt3($data['date_awal'],$data['date_akhir'])->result();
+		$data['klr_iri1']=$this->Rjmlaporan->get_data_iri_keluar_lt1($data['date_awal'],$data['date_akhir'])->result();
+		$data['klr_iri2']=$this->Rjmlaporan->get_data_iri_keluar_lt2($data['date_awal'],$data['date_akhir'])->result();
+		$data['klr_iri3']=$this->Rjmlaporan->get_data_iri_keluar_lt3($data['date_awal'],$data['date_akhir'])->result();
+		$data['msk_ird']=$this->Rjmlaporan->get_data_ird_masuk($data['date_awal'],$data['date_akhir'])->result();
+		$data['msk_irj']=$this->Rjmlaporan->get_data_irj_masuk($data['date_awal'],$data['date_akhir'])->result();
+		$this->load->view('irj/lap_kunj_pasien',$data);			
+		
+	}
+
+	public function kunj_pasien_all()
+	{	   
+		if($this->input->post('date0')!=''){
+			$data['date_awal'] = $this->input->post('date0');
+		}else {
+			$data['date_awal'] = date('Y-m-d', strtotime('-1 days'));
+		}
+		
+		if($this->input->post('date1')!=''){
+			$data['date_akhir'] = $this->input->post('date1');
+		}else {
+			$data['date_akhir'] = date('Y-m-d');
+		}		
+		//	echo $data['date_awal'];echo $data['date_akhir'];
+		$data['title'] = 'Laporan Kunjungan Pasien <b>'.date('d-m-Y', strtotime($data['date_awal'])).' s/d '.date('d-m-Y', strtotime($data['date_akhir'])).'</b>';
+			
+		$data['all']=$this->Rjmlaporan->get_data_kunj_all($data['date_awal'],$data['date_akhir'])->result();		
+		$this->load->view('irj/lap_kunj_pasien_all',$data);			
+		
+	}
+
+	public function lapkunjungan()
+	{
+		$data['title']='Laporan Kunjungan Pasien';
+
+		$data['kontraktorbpjs']=$this->rjmregistrasi->get_kontraktor_bpjs('BPJS')->result();
+		$tgl_indo = new Tglindo();
+		$data['space']="";
+		$data['cara_bayar']="SEMUA";
+		$data['kontraktorcari']='';
+		$data['data_laporan_kunj']=$this->Rjmlaporan->get_data_kunj_poli_harian(date("Y-m-d"),$data['cara_bayar'],'')->result();
+		//$data['date_title']='Hari ini <b>('.date("d F Y").')</b>';
+		$tgl = date("d m Y");
+		$data['date_title']='Hari ini <b>('.substr($tgl,0,2).' '.$tgl_indo->bulan(substr($tgl,3,2)).' '.substr($tgl,6,4).')</b>';
+		$data['tampil_per']="TGL";
+		
+		$data['tgl']=date("Y-m-d");
+		$data['select_poli']=$this->Rjmpencarian->get_poliklinik()->result();
+		$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+		$data['id_poli']="SEMUA";
+		$this->load->view('irj/rjvlapkunjungan',$data);
+	}
+	
+	public function data_kunjungan()
+	{
+		if($_SERVER['REQUEST_METHOD']=='POST'){
+			$data['title']="Laporan Kunjungan Pasien";
+			$data['select_poli']=$this->Rjmpencarian->get_poliklinik()->result();
+			$data['space']="";
+			$tgl_indo = new Tglindo();
+			$data['tgl_indo'] = new Tglindo();
+			$data['kontraktorbpjs']=$this->rjmregistrasi->get_kontraktor_bpjs('BPJS')->result();
+		//	print_r($data['kontraktorbpjs']);die();
+			$data['tampil_per']=$this->input->post('tampil_per');
+			$data['kontraktorcari']='';
+			if ($data['tampil_per'] == "TGL") {
+													//date title
+				$data['tgl']=$this->input->post('tgl');
+				
+				$data['cara_bayar']=$this->input->post('cara_bayar');				
+				$data['kontraktorcari']=$this->input->post('bpjs_bayar');	
+				$tgl = date('d m Y', strtotime($data['tgl']));
+				//$data['date_title']='(<b>'.$tgl.'</b>)';
+				$data['date_title']='<b>('.substr($tgl,0,2).' '.$tgl_indo->bulan(substr($tgl,3,2)).' '.substr($tgl,6,4).')</b>';
+				
+				
+				if ($this->input->post('id_poli')=="SEMUA") {					
+
+					$data['id_poli']="SEMUA";
+					$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+					$data['data_laporan_kunj']=$this->Rjmlaporan->get_data_kunj_poli_harian($data['tgl'],$data['cara_bayar'],$this->input->post('bpjs_bayar'))->result();	
+				} else {
+					$select_poli = explode("@", $this->input->post('id_poli'));
+					$data['id_poli']=$select_poli[0];
+					$data['nm_poli']='<b>'.$select_poli[1].'</b>';
+					$data['data_laporan_kunj']=$this->Rjmlaporan->get_data_kunj_harian($data['tgl'],$data['id_poli'],$data['cara_bayar'],$this->input->post('bpjs_bayar'))->result();
+				}
+
+			//	print_r($data['data_laporan_kunj']);exit();
+					
+			} else if ($data['tampil_per'] == "BLN") {
+				
+				//date title
+				$data['bulan']=$this->input->post('bulan');
+				//$bulan = date('m Y', strtotime($data['bulan']));
+				$bulan1 = $tgl_indo->bulan(substr($data['bulan'],5,2))." ".date('Y', strtotime($data['bulan']));
+				$data['date_title']='<b>('.$bulan1.')</b>';
+				//----------
+				$data['cara_bayar']='';
+				if ($this->input->post('id_poli')=="SEMUA") {
+					$data['id_poli']="SEMUA";
+					$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+					$data['data_laporan_kunj']=$this->Rjmlaporan->get_data_kunj_poli_bulanan($data['bulan'])->result();
+				} else {
+					$select_poli = explode("@", $this->input->post('id_poli'));
+					$data['id_poli']=$select_poli[0];
+					$data['nm_poli']='<b>'.$select_poli[1].'</b>';
+					$data['data_laporan_kunj']=$this->Rjmlaporan->get_data_kunj_bulanan( ($data['bulan']),$data['id_poli'])->result();
+				//	print_r($data['data_laporan_kunj']);die();
+				}
+				//print_r($data);die();
+			
+			} else if ($data['tampil_per'] == "THN") {
+					
+				//date title
+				$data['tahun']=$this->input->post('tahun');
+				$data['date_title']='<b>('.$data['tahun'].')</b>';
+				//----------
+				$data['cara_bayar']='';
+				if ($this->input->post('id_poli')=="SEMUA") {
+					$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+					$data['id_poli']="SEMUA";
+					$data['data_laporan_kunj']=$this->Rjmlaporan->get_data_kunj_poli_tahunan($data['tahun'])->result();
+					
+				} else {
+					$select_poli = explode("@", $this->input->post('id_poli'));
+					$data['id_poli']=$select_poli[0];
+					$data['nm_poli']='<b>'.$select_poli[1].'</b>';
+					$data['data_laporan_kunj']=$this->Rjmlaporan->get_data_kunj_tahunan($data['tahun'],$data['id_poli'])->result();
+				}
+			
+			}
+			
+			$this->load->view('irj/rjvlapkunjungan',$data);
+		}else{
+			redirect('irj/Rjclaporan/lapkunjungan','refresh');
+		}
+	}
+
+	
+
+	public function lap_kunj_pasien_detail() {
+		$data['title'] = '';
+		$data['reservasi']='';
+		$data['daftar']='active';
+		$data['pasien']='';
+		$data['mutasi']='';
+		$data['status']='';
+		$data['resume']='';
+		$data['kontrol']='';
+
+		//bikin object buat penanggalan
+		$data['controller']=$this; 
+
+		$tipe_input = $this->input->post('tampil_per');
+		$tgl_awal = $this->input->post('tgl_awal');
+	//	$jam_awal = $this->input->post('jam_awal');
+		$tgl_akhir = $this->input->post('tgl_akhir');
+	//	$jam_akhir = $this->input->post('jam_akhir');
+	//	$bulan = $this->input->post('bulan');
+	//	$tahun = $this->input->post('tahun');
+	//	$user_biling = $this->input->post('user_biling');
+
+	//	$data['list_user'] = $this->rimuser->get_all_user();
+		
+		//echo $tipe_input;exit;
+
+		//kalo belum ada input. tampilin bulan sekarang. kalo ada input taun pake yang itu
+		if($tipe_input == ''){
+			$tgl_awal = date("Y-m-d");
+			$tgl_akhir = date("Y-m-d");
+			$data['data_kunjungan']=$this->Rjmlaporan->get_kunj_pasien_detail($tgl_awal,$tgl_akhir);
+
+		//	$data['tgl_awal_show'] = "";
+		//	$data['tgl_akhir_show'] = "";
+		//	$data['user_show'] = "";
+
+			$data['tgl_awal'] = $tgl_awal;
+			$data['tgl_akhir'] = $tgl_akhir;
+			$data['data_kunjungan']=$this->Rjmlaporan->get_kunj_pasien_detail($tgl_awal,$tgl_akhir);
+
+			$this->load->view('irj/rjvlink');
+			$this->load->view('irj/list_kunj_pasien_detail',$data);
+			
+	}
+
+		if($tipe_input == 'TGL'){
+
+			$data['tgl_awal'] = $tgl_awal;
+			$data['tgl_akhir'] = $tgl_akhir;
+			$data['data_kunjungan']=$this->Rjmlaporan->get_kunj_pasien_detail($tgl_awal,$tgl_akhir);
+
+			$this->load->view('irj/rjvlink');
+			$this->load->view('irj/list_kunj_pasien_detail',$data);
+			
+		}
+
+	}
+
+
+
+
+	public function lapkeu()
+	{
+		$data['title']='Laporan Keuangan Instalasi Rawat Jalan';
+		
+		$tgl_indo = new Tglindo();
+		$data['status']="10";
+		$data['cara_bayar']="SEMUA";
+		$data['data_laporan_keu']=$this->Rjmlaporan->get_data_keu_poli_harian(date("Y-m-d"),date('Y-m-d', strtotime('-7 days')), $data['status'],$data['cara_bayar'])->result();
+		//$data['date_title']='Hari ini <b>('.date("d F Y").')</b>';
+		$tgl = date("d m Y");
+		$data['date_title']='Hari ini <b>('.substr($tgl,0,2).' '.$tgl_indo->bulan(substr($tgl,3,2)).' '.substr($tgl,6,4).')</b>';
+		$data['tampil_per']="TGL";
+		$data['tgl']=date("Y-m-d");
+		$data['tgl1']=date('Y-m-d', strtotime('-7 days'));
+		$data['select_poli']=$this->Rjmpencarian->get_poliklinik()->result();
+		$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+		$data['id_poli']="SEMUA";		
+
+		if($this->input->post('tgl')!=''){
+			$tgl0=$this->input->post('tgl');
+		}else{
+			$tgl0=date('Y-m-d', strtotime('-7 days'));
+		}
+
+		if($this->input->post('tgl0')!=''){
+			$tgl1=$this->input->post('tgl0');
+		}else{
+			$tgl1=date('Y-m-d');
+		}
+
+		if($this->input->post('id_poli')==''){
+			$data['id_poli']="SEMUA";
+			$data['nm_poli']='SEMUA';
+		}else{
+			//$data['id_poli']=$this->input->post('id_poli');
+			$select_poli = explode("@", $this->input->post('id_poli'));
+			$data['id_poli']=$select_poli[0];
+			$data['nm_poli']='<b>'.$select_poli[1].'</b>';
+		}
+		
+		$id_poli=$data['id_poli'];
+		$status=$data['status'];
+		$cara_bayar=$data['cara_bayar'];
+
+		$this->load->view('irj/rjvlapkeuangan',$data);
+	}
+	
+	public function data_keu()
+	{
+		if($this->input->post('tgl')!=''){
+			$tgl0=$this->input->post('date_picker_days0');
+		}else{
+			$tgl0=date('Y-m-d', strtotime('-7 days'));
+		}
+
+		if($this->input->post('tgl0')!=''){
+			$tgl1=$this->input->post('date_picker_days1');
+		}else{
+			$tgl1=date('Y-m-d');
+		}
+
+		$id_poli=$this->input->post('id_poli');
+		$status="10";
+		$cara_bayar="SEMUA";
+		if($_SERVER['REQUEST_METHOD']=='POST'){
+
+				echo '<script type="text/javascript">window.open("'.site_url("irj/rjexcel/excel_lapkeu/$id_poli/$tgl0/$status/$cara_bayar/$tgl1").'", "_blank");window.focus()</script>';
+				// /rjcexcel/excel_lapkeu/$id_poli/$tgl/$status/$cara_bayar/$tgl1
+			$data['title']="Laporan Keuangan Instalasi Rawat Jalan";
+			$data['select_poli']=$this->Rjmpencarian->get_poliklinik()->result();
+			$data['cara_bayar']=$this->input->post('cara_bayar');			
+			$tgl_indo = new Tglindo();
+			$data['tgl_indo'] = new Tglindo();
+			
+			//status rawat jalan
+			if ($this->input->post('status_pulang')=='1' && $this->input->post('status_dirawat')=='1') {
+				$data['status']= "10";
+			} else if ($this->input->post('status_pulang')=='1' && $this->input->post('status_dirawat')=='') {
+				$data['status']= "1";
+			} else if ($this->input->post('status_pulang')=='' && $this->input->post('status_dirawat')=='1') {
+				$data['status']= "0";
+			} else {
+				$data['status']= "10";
+			}
+			
+			$data['tampil_per']=$this->input->post('tampil_per');
+			if ($data['tampil_per'] == "TGL") {
+						
+				//date title
+				$data['tgl']=$this->input->post('tgl');
+				$tgl = date('d m Y', strtotime($data['tgl']));
+				//$data['date_title']='(<b>'.$tgl.'</b>)';
+				$data['date_title']='<b>('.substr($tgl,0,2).' '.$tgl_indo->bulan(substr($tgl,3,2)).' '.substr($tgl,6,4).')</b>';
+				//----------
+				/*if($data['tgl_awal']!=$data['tgl_akhir']){
+					$data['date_title']='<b>('.$tgl_awal1.' s/d '.$tgl_akhir1.')</b>';
+				}else{
+					$data['date_title']='<b>('.$tgl_awal1.')</b>';
+				}*/
+				
+				if ($this->input->post('id_poli')=="SEMUA") {
+					$data['id_poli']="SEMUA";
+					$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+					$data['data_laporan_keu']=$this->Rjmlaporan->get_data_keu_poli_harian($data['tgl'], $data['status'],$data['cara_bayar'])->result();	
+				} else {
+					$select_poli = explode("@", $this->input->post('id_poli'));
+					$data['id_poli']=$select_poli[0];
+					$data['nm_poli']='<b>'.$select_poli[1].'</b>';
+					$data['data_laporan_keu']=$this->Rjmlaporan->get_data_keu_harian($data['tgl'],$data['id_poli'], $data['status'],$data['cara_bayar'])->result();
+				}
+					
+			} else if ($data['tampil_per'] == "BLN") {
+					
+				//date title
+				$data['bulan']=$this->input->post('bulan');
+				$bulan = date('m Y', strtotime($data['bulan']));
+				$data['date_title']='<b>('.$tgl_indo->bulan(substr($bulan,0,2)).' '.substr($bulan,3,4).')</b>';
+				//----------
+				
+				if ($this->input->post('id_poli')=="SEMUA") {
+					$data['id_poli']="SEMUA";
+					$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+					$data['data_laporan_keu']=$this->Rjmlaporan->get_data_keu_poli_bulanan(substr($data['bulan'],5,2), $data['status'], $data['cara_bayar'])->result();
+				} else {
+					$select_poli = explode("@", $this->input->post('id_poli'));
+					$data['id_poli']=$select_poli[0];
+					$data['nm_poli']='<b>'.$select_poli[1].'</b>';
+					$data['data_laporan_keu']=$this->Rjmlaporan->get_data_keu_bulanan(substr($data['bulan'],5,2),$data['id_poli'], $data['status'], $data['cara_bayar'])->result();
+				}
+			
+			} else if ($data['tampil_per'] == "THN") {
+					
+				//date title
+				$data['tahun']=$this->input->post('tahun');
+				$data['date_title']='<b>('.$data['tahun'].')</b>';
+				//----------
+				
+				if ($this->input->post('id_poli')=="SEMUA") {
+					$data['poli']=$this->Rjmpencarian->get_poliklinik()->result();
+					$data['id_poli']="SEMUA";
+					$data['data_laporan_keu']=$this->Rjmlaporan->get_data_keu_poli_tahunan($data['tahun'], $data['status'], $data['cara_bayar'])->result();
+					
+				} else {
+					$select_poli = explode("@", $this->input->post('id_poli'));
+					$data['id_poli']=$select_poli[0];
+					$data['nm_poli']='<b>'.$select_poli[1].'</b>';
+					$data['data_laporan_keu']=$this->Rjmlaporan->get_data_keu_tahunan($data['tahun'],$data['id_poli'], $data['status'], $data['cara_bayar'])->result();
+				}
+			
+			}
+			
+			$this->load->view('irj/rjvlapkeuangan',$data);
+		}else{
+			redirect('irj/Rjclaporan/rjvlapkeuangan','refresh');
+		}
+	}
+	
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////pendapatan dokter
+	public function lapkeu_dokter()
+	{
+		$data['title']='Laporan Pendapatan Dokter Instalasi Rawat Jalan';
+		$tgl_indo = new Tglindo();
+		$data['id_dokter']='SEMUA';
+		$data['cara_bayar']="SEMUA";
+		$data['datakeu_dokter']=$this->Rjmlaporan->get_data_keu_dokter($data['id_dokter'], date("Y-m-d"), date("Y-m-d"), $data['cara_bayar'])->result();
+		$data['select_dokter']=$this->Rjmpencarian->get_dokter()->result();
+		$data['dokter']=$this->Rjmpencarian->get_dokter()->result();
+		$tgl=date("d m Y");
+		$data['date_title']='Hari ini <b>('.substr($tgl,0,2).' '.$tgl_indo->bulan(substr($tgl,3,2)).' '.substr($tgl,6,4).')</b>';
+		$data['tgl_awal']=date("Y-m-d");
+		$data['tgl_akhir']=date("Y-m-d");
+		$this->load->view('irj/rjvlapkeuangandokter',$data);
+	}
+	public function datakeu_dokter()
+	{
+		$tgl_indo = new Tglindo();
+		$data['title']='Laporan Pendapatan Dokter Instalasi Rawat Jalan';
+		$data['dokter']=$this->Rjmpencarian->get_dokter()->result();
+		$data['select_dokter']=$this->Rjmpencarian->get_dokter()->result();
+		
+		$data['id_dokter']=$this->input->post('id_dokter');
+		$data['cara_bayar']=$this->input->post('cara_bayar');
+		
+		if($_SERVER['REQUEST_METHOD']=='POST'){
+			$data['tgl_awal']=$this->input->post('tgl_awal');
+			$tgl_awal1 = date('d m Y', strtotime($data['tgl_awal']));
+			$data['tgl_akhir']=$this->input->post('tgl_akhir');
+			$tgl_akhir1 = date('d m Y', strtotime($data['tgl_akhir']));
+			
+			if($data['tgl_awal']!=$data['tgl_akhir']){
+				$tgl_indo1=substr($tgl_awal1,0,2).' '.$tgl_indo->bulan(substr($tgl_awal1,3,2)).' '.substr($tgl_awal1,6,4);
+				$tgl_indo2=substr($tgl_akhir1,0,2).' '.$tgl_indo->bulan(substr($tgl_akhir1,3,2)).' '.substr($tgl_akhir1,6,4);
+				$data['date_title']='<b>('.$tgl_indo1.' s/d '.$tgl_indo2.')</b>';
+			}else{
+				$data['date_title']='<b>('.substr($tgl_awal1,0,2).' '.$tgl_indo->bulan(substr($tgl_awal1,3,2)).' '.substr($tgl_awal1,6,4).')</b>';
+		
+			}
+			if ($data['id_dokter']!='SEMUA') {
+				$dokter = explode("@", $data['id_dokter']);
+				$data['id_dokter']=$dokter[0];
+				$data['nm_dokter']=$dokter[1];
+			}else{
+				$data['dokter']=$this->Rjmlaporan->get_data_keu_det_dokter($data['id_dokter'], $data['tgl_awal'],$data['tgl_akhir'], $data['cara_bayar'])->result();
+			}
+			
+			$data['datakeu_dokter']=$this->Rjmlaporan->get_data_keu_dokter($data['id_dokter'], $data['tgl_awal'],$data['tgl_akhir'], $data['cara_bayar'])->result();
+			//print_r($data['datakeu_dokter']);
+			$this->load->view('irj/rjvlapkeuangandokter',$data);
+		}else{
+			redirect('irj/Rjclaporan/lapkeu_dokter','refresh');
+		}
+	}
+	
+	public function cetak($tipe='', $tgl_awal='',$tgl_akhir='')
+	{
+
+		$tgl_indo=new Tglindo();
+		
+		
+		date_default_timezone_set("Asia/Bangkok");
+		$tgl_jam = date("d-m-Y H:i:s");
+		//print_r($tampil);
+		// $data_rs=$this->ModelKwitansi->getdata_rs('10000')->result();
+		// foreach($data_rs as $row){
+		// 	$namars=$row->namars;
+		// 	$alamat=$row->alamat;
+		// 	$kota_kab=$row->kota;
+		// }
+			$namars=$this->config->item('namars');
+			$alamat=$this->config->item('alamat');
+			$kota_kab=$this->config->item('kota');
+		////EXCEL 
+		//$this->load->library('Excel');  
+		 $this->load->file(APPPATH.'third_party/PHPExcel.php');   
+		// Create new PHPExcel object  
+		$objPHPExcel = new PHPExcel();   
+		   
+		// Set document properties  
+		$objPHPExcel->getProperties()->setCreator($namars)  
+		        ->setLastModifiedBy($namars)  
+		        ->setTitle("Laporan Kunjungan ".$namars)  
+		        ->setSubject("Laporan Kunjungan ".$namars." Document")  
+		        ->setDescription("Laporan Kunjungan HMIS ".$namars." for Office 2007 XLSX, generated by HMIS.")  
+		        ->setKeywords($namars)  
+		        ->setCategory("Laporan User");  
+
+		//$objReader = PHPExcel_IOFactory::createReader('Excel2007');    
+		//$objPHPExcel = $objReader->load("project.xlsx");
+		   
+		$objReader= PHPExcel_IOFactory::createReader('Excel2007');
+		$objReader->setReadDataOnly(true);
+		$tgl1 = date('d F Y', strtotime($tgl_awal));	
+		$tgl2 = date('d F Y', strtotime($tgl_akhir));
+
+		if($tipe=='mskiri1'){				
+			$data_user=$this->Rjmlaporan->get_data_iri_masuk_lt1($tgl_awal,$tgl_akhir)->result();
+		}
+		else if($tipe=='mskiri2'){
+			$data_user=$this->Rjmlaporan->get_data_iri_masuk_lt2($tgl_awal,$tgl_akhir)->result();
+		}
+		else if($tipe=='mskiri3'){
+			$data_user=$this->Rjmlaporan->get_data_iri_masuk_lt3($tgl_awal,$tgl_akhir)->result();
+		}
+		else if($tipe=='mskirj'){
+			$data_user=$this->Rjmlaporan->get_data_irj_masuk($tgl_awal,$tgl_akhir)->result();
+		}
+		else if($tipe=='mskird'){
+			$data_user=$this->Rjmlaporan->get_data_ird_masuk($tgl_awal,$tgl_akhir)->result();
+		}
+		else if($tipe=='klriri1'){
+			$data_user=$this->Rjmlaporan->get_data_iri_keluar_lt1($tgl_awal,$tgl_akhir)->result();
+		}
+		else if($tipe=='klriri2'){
+			$data_user=$this->Rjmlaporan->get_data_iri_keluar_lt2($tgl_awal,$tgl_akhir)->result();
+		}
+		else if($tipe=='klriri3'){
+			$data_user=$this->Rjmlaporan->get_data_iri_keluar_lt3($tgl_awal,$tgl_akhir)->result();
+		}
+		
+		$objPHPExcel=$objReader->load(APPPATH.'third_party/lap_kunj_pasien.xlsx');
+				// Set active sheet index to the first sheet, so Excel opens this as the first sheet  
+				$objPHPExcel->setActiveSheetIndex(0);  
+				// Add some data  
+				$objPHPExcel->getActiveSheet()->SetCellValue('A1', $data['title']);
+				$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'Tanggal : '.$tgl1.' - '.$tgl2);
+
+				$vtot1=0;$vtot2=0;
+				$i=1;
+				$rowCount = 5;
+				//print_r($data_user); break;
+				foreach($data_user as $row){				
+					$j=1;		
+					$vtot1=$vtot1+$row->total;
+					 
+								$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $i);
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, $row->total);
+								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, date('d-m-Y',strtotime($row->tgl)));
+							 	$i++;
+							 								
+						$rowCount++;
+						// if
+					
+				}
+				
+				$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Total Input');
+				$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount,  $vtot1);
+				$objPHPExcel->getActiveSheet()->getStyle('B'.$rowCount)->applyFromArray(
+				    array(
+					'fill' => array(
+					    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+					    'color' => array('rgb' => 'C1B2B2')
+					)
+				    )
+				);
+				
+				header('Content-Disposition: attachment;filename="Lap_'.$tipe.'_TGL_'.date('d-m-Y', strtotime($tgl_awal)).'_'.date('d-m-Y', strtotime($tgl_akhir)).'.xlsx"');  
+
+		// Rename worksheet (worksheet, not filename)  
+		$objPHPExcel->getActiveSheet()->setTitle('RS PATRIA IKKT');  
+		   
+		   
+		   
+		// Redirect output to a client’s web browser (Excel2007)  
+		//clean the output buffer  
+		ob_end_clean();  
+		   
+		//this is the header given from PHPExcel examples.   
+		//but the output seems somewhat corrupted in some cases.  
+		//header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');  
+		//so, we use this header instead.  
+		header('Content-type: application/vnd.ms-excel');  
+		header('Cache-Control: max-age=0');  
+		   
+		$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');  
+		$objWriter->save('php://output');  					
+	}
+
+	public function cetak_all($tgl_awal='',$tgl_akhir='')
+	{
+
+		$tgl_indo=new Tglindo();
+		
+		
+		date_default_timezone_set("Asia/Bangkok");
+		$tgl_jam = date("d-m-Y H:i:s");
+		//print_r($tampil);
+		// $data_rs=$this->ModelKwitansi->getdata_rs('10000')->result();
+		// foreach($data_rs as $row){
+		// 	$namars=$row->namars;
+		// 	$alamat=$row->alamat;
+		// 	$kota_kab=$row->kota;
+		// }
+			$namars=$this->config->item('namars');
+			$alamat=$this->config->item('alamat');
+			$kota_kab=$this->config->item('kota');
+		////EXCEL 
+		$this->load->library('Excel');  
+		   
+		// Create new PHPExcel object  
+		$objPHPExcel = new PHPExcel();   
+		   
+		// Set document properties  
+		$objPHPExcel->getProperties()->setCreator($namars)  
+		        ->setLastModifiedBy($namars)  
+		        ->setTitle("Laporan Kunjungan ".$namars)  
+		        ->setSubject("Laporan Kunjungan ".$namars." Document")  
+		        ->setDescription("Laporan Kunjungan HMIS ".$namars." for Office 2007 XLSX, generated by HMIS.")  
+		        ->setKeywords($namars)  
+		        ->setCategory("Laporan User");  
+
+		//$objReader = PHPExcel_IOFactory::createReader('Excel2007');    
+		//$objPHPExcel = $objReader->load("project.xlsx");
+		   
+		$objReader= PHPExcel_IOFactory::createReader('Excel2007');
+		$objReader->setReadDataOnly(true);
+		$tgl1 = date('d F Y', strtotime($tgl_awal));	
+		$tgl2 = date('d F Y', strtotime($tgl_akhir));
+					
+		$data_user=$this->Rjmlaporan->get_data_kunj_all($tgl_awal,$tgl_akhir)->result();		
+		
+		$objPHPExcel=$objReader->load(APPPATH.'third_party/lap_kunj_pasien_all.xlsx');
+				// Set active sheet index to the first sheet, so Excel opens this as the first sheet  
+				$objPHPExcel->setActiveSheetIndex(0);  
+				// Add some data  
+				$objPHPExcel->getActiveSheet()->SetCellValue('A1', 'Laporan Kunjungan Semua Pasien');
+				$objPHPExcel->getActiveSheet()->SetCellValue('A2', 'Tanggal : '.$tgl1.' - '.$tgl2);
+
+				$vtot1=0;$vtot2=0;$vtot3=0;$vtot4=0;$vtot5=0;$vtot6=0;$vtot7=0;$vtot8=0;$vtot9=0;
+				$i=1;
+				$rowCount = 6;
+				//print_r($data_user); break;
+				foreach($data_user as $row){				
+					$j=1;		
+					$vtot1=$vtot1+$row->total;
+					$vtot2=$vtot2+$row->ird;
+					$vtot3=$vtot3+$row->irj;
+					$vtot4=$vtot4+$row->iri_masuk1;
+					$vtot5=$vtot5+$row->iri_masuk2;
+					$vtot6=$vtot6+$row->iri_masuk3;
+					$vtot7=$vtot7+$row->iri_keluar1;
+					$vtot8=$vtot8+$row->iri_keluar2;
+					$vtot9=$vtot9+$row->iri_keluar3;
+					 
+								$objPHPExcel->getActiveSheet()->SetCellValue('A'.$rowCount, $i);
+								$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, date('d-m-Y',strtotime($row->tanggal)));
+								$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount, $row->total);
+								$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount, $row->ird);
+								$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount, $row->irj);
+								$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount, $row->iri_masuk1);
+								$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount, $row->iri_masuk2);
+								$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount, $row->iri_masuk3);
+								$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount, $row->iri_keluar1);
+								$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount, $row->iri_keluar2);
+								$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount, $row->iri_keluar3);
+
+							 	$i++;
+							 								
+						$rowCount++;
+						// if
+					
+				}
+				
+				$objPHPExcel->getActiveSheet()->SetCellValue('B'.$rowCount, 'Total');
+				$objPHPExcel->getActiveSheet()->SetCellValue('C'.$rowCount,  $vtot1);
+				$objPHPExcel->getActiveSheet()->SetCellValue('D'.$rowCount,  $vtot2);
+				$objPHPExcel->getActiveSheet()->SetCellValue('E'.$rowCount,  $vtot3);
+				$objPHPExcel->getActiveSheet()->SetCellValue('F'.$rowCount,  $vtot4);
+				$objPHPExcel->getActiveSheet()->SetCellValue('G'.$rowCount,  $vtot5);
+				$objPHPExcel->getActiveSheet()->SetCellValue('H'.$rowCount,  $vtot6);
+				$objPHPExcel->getActiveSheet()->SetCellValue('I'.$rowCount,  $vtot7);
+				$objPHPExcel->getActiveSheet()->SetCellValue('J'.$rowCount,  $vtot8);
+				$objPHPExcel->getActiveSheet()->SetCellValue('K'.$rowCount,  $vtot9);
+				$objPHPExcel->getActiveSheet()->getStyle('B'.$rowCount)->applyFromArray(
+				    array(
+					'fill' => array(
+					    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+					    'color' => array('rgb' => 'C1B2B2')
+					)
+				    )
+				);
+				
+				header('Content-Disposition: attachment;filename="Lap_All_TGL_'.date('d-m-Y', strtotime($tgl_awal)).'_'.date('d-m-Y', strtotime($tgl_akhir)).'.xlsx"');  
+
+		// Rename worksheet (worksheet, not filename)  
+		$objPHPExcel->getActiveSheet()->setTitle('RS PATRIA IKKT');  
+		   
+		   
+		   
+		// Redirect output to a client’s web browser (Excel2007)  
+		//clean the output buffer  
+		ob_end_clean();  
+		   
+		//this is the header given from PHPExcel examples.   
+		//but the output seems somewhat corrupted in some cases.  
+		//header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');  
+		//so, we use this header instead.  
+		header('Content-type: application/vnd.ms-excel');  
+		header('Cache-Control: max-age=0');  
+		   
+		$objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');  
+		$objWriter->save('php://output');  					
+	}
+
+		public function cetak_kunj_pasien_detail_excel($tgl_awal='',$tgl_akhir="",$user=""){
+
+		require_once (APPPATH.'third_party/PHPExcel.php');
+
+      set_time_limit(0);
+
+      $tgl_awal = urldecode($tgl_awal);
+      $tgl_akhir = urldecode($tgl_akhir);
+
+ 
+      $excel = PHPExcel_IOFactory::load("./download/inap/laporan/pembayaran/template_pendapatan_harian.xls");
+
+      //activate worksheet number 1
+      $excel->setActiveSheetIndex(0);
+      //name the worksheet
+      $excel->getActiveSheet()->setTitle('Worksheet 1');
+
+      //ambil semua data pendapatan
+      $list_keluar_masuk = $this->rimpasien->get_list_pasien_keluar_by_tanggal($tgl_awal,$tgl_akhir,$user);	
+	$list_keluar_irj = $this->rimpasien->get_list_pasien_keluar_irj_by_tanggal($tgl_awal,$tgl_akhir,$user);
+      //print_r($data_pasien_keluar_tanggal[0]);exit;
+      $row = 5;
+        
+       	$tgl_indo = new Tglindo();
+
+  		$bulan_show = $tgl_indo->bulan(substr($tgl_awal,5,2));
+		$tahun_show = substr($tgl_awal,0,4);
+		$tanggal_show = substr($tgl_awal,8,2);
+		$jam_show = substr($tgl_awal,11,5);
+		$tgl_awal_lengkap = $tanggal_show." ".$bulan_show." ".$tahun_show." - ".$jam_show;
+
+		$bulan_show = $tgl_indo->bulan(substr($tgl_akhir,5,2));
+		$tahun_show = substr($tgl_akhir,0,4);
+		$tanggal_show = substr($tgl_akhir,8,2);
+		$jam_show = substr($tgl_akhir,11,5);
+		$tgl_akhir_lengkap = $tanggal_show." ".$bulan_show." ".$tahun_show." - ".$jam_show;
+
+
+      $excel->getActiveSheet()->setCellValue('A1', "Laporan Pendapatan Kasir : ".$user,PHPExcel_Cell_DataType::TYPE_STRING);
+      $excel->getActiveSheet()->setCellValue('A2', "Tanggal : ".date('d F Y', strtotime($tgl_awal))." - ".date('d F Y', strtotime($tgl_akhir)),PHPExcel_Cell_DataType::TYPE_STRING);
+
+      $excel->getActiveSheet()->getStyle('A5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('A5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('B5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('B5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('C5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('C5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('D5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('D5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('E5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('E5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      /*$excel->getActiveSheet()->getStyle('F5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('F5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('G5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('G5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('H5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('H5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('I5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('I5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+      $excel->getActiveSheet()->getStyle('J5')->getFont()->setBold(true);
+      $excel->getActiveSheet()->getStyle('J5')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);*/
+
+      
+      $excel->getActiveSheet()->setAutoFilter('A5:J5');
+        $total = 0;
+	  	$total_diskon = 0;
+	  	$total_bayar_tunai = 0;
+	  	$total_dibayar_kartu_kredit = 0;
+	  	$total_charge_kartu_kredit = 0;
+
+	  //RAWAT INAP
+      foreach ($list_keluar_masuk as $r) {
+     	$total = $total + $r['vtot'] + $r['diskon'];
+  		$total_bayar_tunai = $total_bayar_tunai + $r['tunai'];
+  		$total_dibayar_kartu_kredit = $total_dibayar_kartu_kredit + $r['nilai_kkkd'];
+  		$total_charge_kartu_kredit = $total_charge_kartu_kredit + ($r['nilai_kkkd'] * $r['persen_kk'] / 100);
+
+  		$diskon = $r['diskon'];
+  		if($diskon == '' || $diskon == NULL){
+  			$diskon = 0;
+  		}
+  		$total_diskon = $total_diskon + $diskon;
+
+        $row++;
+        $excel->getActiveSheet()->setCellValue('A'.$row, $r['tgl_cetak_kw'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('B'.$row, $r['no_ipd'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('C'.$row, $r['nama'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('D'.$row, 'IRI',PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('E'.$row, $r['tunai'],PHPExcel_Cell_DataType::TYPE_STRING);
+        
+      }
+     
+      //RAWAT JALAN
+      foreach ($list_keluar_irj as $r) {
+     	$total = $total + $r['vtot'] + $r['vtot_rad'] + $r['vtot_lab'] + $r['vtot_obat'] ;
+  		$total_bayar_tunai = $total_bayar_tunai + $r['vtotpoli'];
+  		$total_dibayar_kartu_kredit = $total_dibayar_kartu_kredit + $r['nilai_kkkd'];
+  		$total_charge_kartu_kredit = $total_charge_kartu_kredit + ($r['nilai_kkkd'] * $r['persen_kk'] / 100);
+
+  		$diskon = $r['diskon'];
+  		if($diskon == '' || $diskon == NULL){
+  			$diskon = 0;
+  		}
+  		$total_diskon = $total_diskon + $diskon;
+
+  		if($r['pasien_bayar'] == 1){
+  			$jenis_bayar =  "TUNAI";
+  		}else{
+  			$jenis_bayar =  "KREDIT";
+  		}
+
+        $row++;
+        $excel->getActiveSheet()->setCellValue('A'.$row, $r['tgl_cetak_kw'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('B'.$row, $r['no_register'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('C'.$row, $r['nama'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('D'.$row, $r['nm_poli'],PHPExcel_Cell_DataType::TYPE_STRING);
+        $excel->getActiveSheet()->setCellValue('E'.$row, $r['vtotpoli'],PHPExcel_Cell_DataType::TYPE_STRING);    
+      }
+
+      $row++;
+      $excel->getActiveSheet()->setCellValue('D'.$row, "Total Pembayaran",PHPExcel_Cell_DataType::TYPE_STRING);
+      $excel->getActiveSheet()->setCellValue('E'.$row, $total_bayar_tunai,PHPExcel_Cell_DataType::TYPE_STRING);
+     
+
+        // //change the font size
+        // $this->excel->getActiveSheet()->getStyle('A1')->getFont()->setSize(20);
+        // //make the font become bold
+        // $this->excel->getActiveSheet()->getStyle('A1')->getFont()->setBold(true);
+        // //merge cell A1 until D1
+        // $this->excel->getActiveSheet()->mergeCells('A1:D1');
+        // //set aligment to center for that merged cell (A1 to D1)
+        // $this->excel->getActiveSheet()->getStyle('A1')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+
+	  $newDate = date("d-m-Y", strtotime($tgl_awal));
+      $filename='Pendapatan_Tanggal_'.$newDate.'.xls'; //save our workbook as this file name
+      header('Content-Type: application/vnd.ms-excel'); //mime type
+      header('Content-Disposition: attachment;filename="'.$filename.'"'); //tell browser what's the file name
+      header('Cache-Control: max-age=0'); //no cache
+                  
+      //save it to Excel5 format (excel 2003 .XLS file), change this to 'Excel2007' (and adjust the filename extension, also the header mime type)
+      //if you want to save it as .XLSX Excel 2007 format
+      $objWriter = PHPExcel_IOFactory::createWriter($excel, 'Excel5');  
+      //force user to download the Excel file without writing it to server's HD
+      $objWriter->save('php://output');
+	}
+
+
+
+}
+?>

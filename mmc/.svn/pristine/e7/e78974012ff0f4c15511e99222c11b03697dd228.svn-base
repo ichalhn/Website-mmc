@@ -1,0 +1,279 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+require_once(APPPATH.'controllers/Secure_area.php');
+class Frmcretur extends Secure_area {
+	public function __construct(){
+		parent::__construct();
+		
+		$this->load->model('logistik_farmasi/Frmmretur','',TRUE);
+		$this->load->model('logistik_farmasi/Frmmtransaksi','',TRUE);
+		$this->load->model('logistik_farmasi/Frmmpemasok','',TRUE);
+	}
+
+	public function index(){
+		$data['title'] = 'Daftar Retur Farmasi';
+		$data['logistik_farmasi']=$this->Frmmretur->get_daftar_retur()->result();
+		$this->load->view('logistik_farmasi/frmvdaftarretur', $data);
+	}
+	
+
+	public function by_date(){
+		$date=$this->input->post('date');
+		$data['title'] = 'Tanggal '.$date;
+		$data['logistik_farmasi']=$this->Frmmretur->get_daftar_retur_by_date($date)->result();
+		$this->load->view('logistik_farmasi/frmvdaftarretur',$data);
+	}
+
+	public function by_no()
+	{
+		
+		$key=$this->input->post('key');
+		$data['title'] = 'No Faktur '.$date;
+		$data['logistik_farmasi']=$this->Frmmdaftar->get_daftar_retur_by_no($key)->result();
+		$this->load->view('logistik_farmasi/frmvdaftarretur',$data);
+	}
+
+	public function get_data_detail_retur(){
+   		 $receiving_id=$this->input->post('receiving_id');
+   		 $datajson=$this->Frmmtransaksi->getdata_receiving_item($receiving_id)->result();
+   		   echo json_encode($datajson);
+    }
+
+    public function data_receiving_item($receiving_id){
+    	$datajson['title'] = 'Detail Retur Farmasi';
+   		 $datajson['receiving']=$this->Frmmtransaksi->getdata_receiving_item($receiving_id)->result();
+        $datajson['select_gudang']=$this->Frmmtransaksi->cari_gudang()->result();
+   		  $this->load->view('logistik_farmasi/frmvdetailretur',$datajson);
+    }
+
+    public function retur($receiving_id){
+       $data['title'] = 'Daftar Retur Farmasi';
+       $data['retur_barang']=$this->Frmmretur->get_data_retur_by_id($receiving_id)->result();
+       $data['receiving_id']=$receiving_id;
+       $this->load->view('logistik_farmasi/Frmvdaftardetailretur',$data);
+    }
+
+    public function edit_data_retur(){
+      $batch_no=$this->input->post('batch_no');
+      $datajson=$this->Frmmretur->get_data_retur_by_batch($batch_no)->result();
+      echo json_encode($datajson);
+    }
+
+    public function edit_data_stok(){
+		/*
+      $batch_no=$this->input->post('edit_batch_no');
+      $item_id=$this->input->post('edit_item_id');
+      $data['qty']=$this->input->post('edit_stok_hide');
+      $data_retur=$this->input->post('edit_quantity');
+	  */
+      $r_id=$this->input->post('receiving_id');
+      $this->Frmmretur->insert_quantity($this->input->post());
+      $this->Frmmretur->edit_stok( $this->input->post() );
+      redirect('logistik_farmasi/Frmcretur/retur/'.$r_id);
+    }
+
+	public function selesai_retur(){
+      $data['item_id']=$this->input->post('idobat');
+      $data_obat=$this->Frmmtransaksi->getitem_obat($data['item_id'])->result();
+      foreach($data_obat as $row){
+        $data['description']=$row->nm_obat;
+      }
+      $data['quantity_purchased']=$this->input->post('qty');
+
+      $this->Frmmtransaksi->update_receiving_item($data);
+
+      /*$data['receiving_time']=$this->input->post('receiving_time');
+      $data['person_id']=$this->input->post('person_id');
+      $data['no_faktur']=$this->input->post('no_faktur');
+      $data['total']=$this->input->post('total');
+      $data['payment_type']=$this->input->post('payment_type');*/
+      redirect('logistik_farmasi/Frmcretur/data_receiving_item/'.$receiving_id);
+      //print_r($data);
+    }
+
+    public function selesai_transaksi(){
+      $data['item_id']=$this->input->post('idobat');
+      $data_obat=$this->Frmmtransaksi->getitem_obat($data['item_id'])->result();
+      foreach($data_obat as $row){
+        $data['description']=$row->nm_obat;
+      }
+      $data['quantity_purchased']=$this->input->post('qty');
+
+      $this->Frmmtransaksi->insert_receiving_item($data);
+
+      /*$data['receiving_time']=$this->input->post('receiving_time');
+      $data['person_id']=$this->input->post('person_id');
+      $data['no_faktur']=$this->input->post('no_faktur');
+      $data['total']=$this->input->post('total');
+      $data['payment_type']=$this->input->post('payment_type');*/
+      redirect('logistik_farmasi/Frmcpembelian/form_detail_transaksi/'.$no_faktur);
+      //print_r($data);
+    }
+
+	function form_detail_transaksi($no_faktur=''){
+        $data['title'] = 'Detail Transaksi';
+        $data['data_obat']=$this->Mmobat->get_all_obat()->result();
+		    $data_detail_pembelian=$this->Frmmtransaksi->get_receivings($no_faktur)->result();
+		        foreach($data_detail_pembelian as $row){
+			          $data['receiving_time'] = $row->receiving_time;
+			          $data['payment_type'] = $row->payment_type;
+                $data['id_receiving'] = $row->receiving_id;
+                $data['total_price'] = $row->total_price;
+                $data['supplier_id'] = $row->supplier_id;
+                $data['no_faktur'] = $row->no_faktur;
+                $data['jatuh_tempo'] = $row->jatuh_tempo;
+
+		        }
+        $data['select_gudang']=$this->Frmmtransaksi->cari_gudang()->result();
+        $data['company_name']=$this->Frmmpemasok->get_company_name($no_faktur)->row();
+        $data['data_receiving_item']=$this->Frmmtransaksi->getdata_receiving_item($data['id_receiving'])->result();
+        $this->load->view('logistik_farmasi/frmvdetailretur',$data);
+    }
+
+    public function cetak_faktur(){
+    $no_faktur = $this->input->post('faktur_hidden');
+    echo '<script type="text/javascript">window.open("'.site_url("logistik_farmasi/Frmcretur/cetak_faktur_retur/$no_faktur").'", "_blank");window.focus()</script>';
+    redirect('logistik_farmasi/Frmcpembelian/index/'.'refresh');
+  }
+
+
+
+  public function cetak_faktur_retur($no_faktur=''){
+    date_default_timezone_set("Asia/Bangkok");
+    $tgl_jam = date("d-m-Y H:i:s");
+    $tgl = date("d-m-Y");
+
+    $data_rs=$this->Frmmkwitansi->get_data_rs('10000')->result();
+      foreach($data_rs as $row){
+        $namars=$row->namars;
+        $kota_kab=$row->kota;
+        $alamat=$row->alamat;
+      }
+
+      $data_detail_pembelian=$this->Frmmtransaksi->get_receivings($no_faktur)->result();
+            foreach($data_detail_pembelian as $row){
+                $data['receiving_time'] = $row->receiving_time;
+                $data['payment_type'] = $row->payment_type;
+                $payment_type=$data['payment_type'] ;
+                $data['id_receiving'] = $row->receiving_id;
+                $id_receiving=$data['id_receiving'] ;
+                $data['total_price'] = $row->total_price;
+                $data['supplier_id'] = $row->supplier_id;
+                $data['no_faktur'] = $row->no_faktur;
+                $data['jatuh_tempo'] = $row->jatuh_tempo;
+            }
+
+     $data['data_receiving_item']=$this->Frmmtransaksi->getdata_receiving_item($data['id_receiving'])->result();
+     $cterbilang=new rjcterbilang();
+
+          $konten=
+    					"<table>
+    						<tr>
+    							<td><p align=\"right\"><b>Tanggal-Jam: $tgl_jam</b></p></td>
+    						</tr>
+    						<tr>
+    							<td colspan=\"3\"><img src=\"asset/images/logo-muaraenim.png\" alt=\"img\" height=\"40\"></td>
+    						</tr>
+
+    						<tr>
+    							<td><b>$alamat</b></td>
+    						</tr>
+    					</table>
+    					<br/><hr/><br/>
+    					<p align=\"center\"><b>
+    					FAKTUR RETUR OBAT<br/>
+    					No. FRM. RT_$id_receiving
+    					</b></p><br/>
+    					<br><br>
+    					<table>
+    						<tr>
+    							<td width=\"20%\"><b>No. Faktur</b></td>
+    							<td width=\"3%\"> : </td>
+    							<td>$no_faktur</td>
+    							<td width=\"15%\"> </td>
+    							<td width=\"15%\"><b>Jenis Transaksi</b></td>
+    							<td width=\"3%\"> : </td>
+    							<td>RETUR </td>
+    						</tr>
+    						<tr><td width=\"20%\"><b>Supplier</b></td>
+                  <td width=\"3%\"> :  </td>
+                  <td>$supplier_id</td>
+                  <td width=\"15%\"> </td>
+    						</tr>
+                <tr>
+                  <td><b>Untuk Pembelian Obat</b></td>
+                  <td> : </td>
+                  <td></td>
+                </tr>
+    					</table>
+    					<br/><br/>
+    					<table>
+    						<tr><hr>
+    							<th width=\"5%\"><p align=\"center\"><b>No</b></p></th>
+    							<th width=\"45%\"><p align=\"center\"><b>Nama Item</b></p></th>
+    							<th width=\"20%\"><p align=\"center\"><b>Harga</b></p></th>
+    							<th width=\"10%\"><p align=\"center\"><b>Banyak</b></p></th>
+    							<th width=\"20%\"><p align=\"center\"><b>Total</b></p></th>
+    						</tr>
+    						<hr>
+    					";
+
+
+    					$i=1;
+    					$jumlah_vtot=0;
+    					foreach($data['data_receiving_item'] as $row){
+    						$jumlah_vtot=$jumlah_vtot+$row->item_cost_price;
+    						$vtot = number_format( $row->item_cost_price, 2 , ',' , '.' );
+                $vtot_terbilang=$cterbilang->terbilang($jumlah_vtot);
+    						$konten=$konten."<tr>
+    										  <td><p align=\"center\">$i</p></td>
+    										  <td>$row->description</td>
+    										  <td><p align=\"center\">".number_format( $row->item_unit_price, 2 , ',' , '.' )."</p></td>
+    										  <td><p align=\"center\">$row->quantity_purchased</p></td>
+    										  <td><p align=\"right\">$vtot</P></td>
+    										  <br>
+    										</tr>";
+    						$i++;
+
+    					}	
+                  $konten=$konten."
+                      <tr><hr><br>
+                        <th colspan=\"4\"><p align=\"right\"><font size=\"12\"><b>Jumlah   </b></font></p></th>
+                        <th bgcolor=\"yellow\"><p align=\"right\"><font size=\"12\"><b>".number_format( $jumlah_vtot, 2 , ',' , '.' )."</b></font></p></th>
+                      </tr>
+
+                    </table>
+                    <b><font size=\"10\"><p align=\"right\">Terbilang : " .$vtot_terbilang."</p></font></b>
+                    <br><br>
+                    <p align=\"right\">$kota_kab, $tgl</p>
+                    ";
+
+
+                  $file_name="SKR_$id_receiving.pdf";
+            				/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            				tcpdf();
+            				$obj_pdf = new TCPDF('L', PDF_UNIT, 'A5', true, 'UTF-8', false);
+            				$obj_pdf->SetCreator(PDF_CREATOR);
+            				$title = "";
+            				$obj_pdf->SetTitle($file_name);
+            				$obj_pdf->SetPrintHeader(false);
+            				$obj_pdf->SetPrintFooter(false);
+            				$obj_pdf->SetHeaderData('', '', $title, '');
+            				$obj_pdf->setHeaderFont(Array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+            				$obj_pdf->setFooterFont(Array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+            				$obj_pdf->SetDefaultMonospacedFont('helvetica');
+            				$obj_pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+            				$obj_pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+            				$obj_pdf->SetMargins('10', '10', '10');
+            				$obj_pdf->SetAutoPageBreak(TRUE, '5');
+            				$obj_pdf->SetFont('helvetica', '', 9);
+            				$obj_pdf->setFontSubsetting(false);
+            				$obj_pdf->AddPage();
+            				ob_start();
+            					$content = $konten;
+            				ob_end_clean();
+            				$obj_pdf->writeHTML($content, true, false, true, false, '');
+            				$obj_pdf->Output(FCPATH.'download/logistik_farmasi/frmkwitansi/'.$file_name, 'FI');
+                    redirect('logistik_farmasi/Frmcretur/index', 'refresh');
+
+        }
+    }

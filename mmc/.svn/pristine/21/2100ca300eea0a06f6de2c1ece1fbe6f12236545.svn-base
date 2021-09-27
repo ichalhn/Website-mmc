@@ -1,0 +1,681 @@
+<?php
+	//$this->load->view('layout/header.php');
+?>
+<script>
+
+
+$(function() {
+	$('.auto_search_poli').autocomplete({
+		serviceUrl: '<?php echo site_url();?>/irj/rjcautocomplete/data_poli',
+		onSelect: function (suggestion) {
+			$('#id_poli').val(''+suggestion.id_poli);
+			$('#kd_ruang').val(''+suggestion.kd_ruang);
+		}
+	});
+	$('#dirujuk_rj_ke_poli').hide();
+	$('#pilih_dokter').hide();
+	$('#div_tgl_kontrol').hide();
+	$('#div_rujuk_penunjang').hide();
+   	$('#date_picker').datepicker({
+		format: "yyyy-mm-dd",
+		autoclose: true,
+		todayHighlight: true,
+	});
+    $("#date_picker").datepicker("setDate", new Date());
+
+	var lab="<?php echo $rujukan_penunjang->lab;?>";
+	//var pa="<?php echo $rujukan_penunjang->pa;?>";
+	var rad="<?php echo $rujukan_penunjang->rad;?>";
+	var obat="<?php echo $rujukan_penunjang->obat;?>";
+	
+	if(lab=='1' && pa=='1' && rad=='1' && obat=='1'){
+		 document.getElementById("button_simpan_rujukan").disabled= true;
+	}
+	
+});		
+
+function ok_enable(){
+    jadwal_rujuk = document.getElementById('date_picker').value;
+	// alert(jadwal_lab);
+	swal({
+	  title: "Rujuk?",
+	  text: "Rujuk Penunjang Operasi!",
+	  type: "warning",
+	  showCancelButton: true,
+  	  showLoaderOnConfirm: true,
+	  confirmButtonColor: "#DD6B55",
+	  confirmButtonText: "Ya!",
+	  cancelButtonText: "Tidak!",
+	  closeOnConfirm: false,
+	  closeOnCancel: false
+	},
+	function(isConfirm){
+	  if (isConfirm) {
+	    $.ajax({
+			type:'POST',
+			dataType: 'json',
+			url:"<?php echo base_url('irj/rjcpelayanan/update_rujukan_penunjang_2')?>",
+			data: {
+				no_register: '<?php echo $no_register ?>',
+				jenis_rujuk: 'ok',
+				jadwal_rujuk: jadwal_rujuk,
+			},
+			success: function(data){
+				$('#ok_refresh').load(document.URL +' #ok_refresh');
+			    swal("Sukses!", "Rujuk selesai di pilih.", "success");
+	 			window.open('<?php echo site_url('ok/okcdaftar/pemeriksaan_ok'); echo "/".$no_register ?>','_blank');
+			},
+			error: function(){
+				alert("error");
+			}
+		});
+	  } else {
+	    swal("Close", "Tidak Jadi", "error");
+		document.getElementById("ok1").checked = false;
+	  }
+	});
+}
+
+function lab_enable(){
+    jadwal_rujuk = document.getElementById('date_picker').value;
+	// alert(jadwal_lab);
+	swal({
+	  title: "Rujuk?",
+	  text: "Rujuk Penunjang Laboratorium!",
+	  type: "warning",
+	  showCancelButton: true,
+  	  showLoaderOnConfirm: true,
+	  confirmButtonColor: "#DD6B55",
+	  confirmButtonText: "Ya!",
+	  cancelButtonText: "Tidak!",
+	  closeOnConfirm: false,
+	  closeOnCancel: false
+	},
+	function(isConfirm){
+	  if (isConfirm) {
+	    $.ajax({
+			type:'POST',
+			dataType: 'json',
+			url:"<?php echo base_url('irj/rjcpelayanan/update_rujukan_penunjang_2')?>",
+			data: {
+				no_register: '<?php echo $no_register ?>',
+				jenis_rujuk: 'lab',
+				jadwal_rujuk: jadwal_rujuk,
+			},
+			success: function(data){
+				$('#lab_refresh').load(document.URL +' #lab_refresh');
+			    swal("Sukses!", "Rujuk selesai di pilih.", "success");
+	 			window.open('<?php echo site_url('lab/labcdaftar/pemeriksaan_lab'); echo "/".$no_register ?>','_blank');
+			},
+			error: function(){
+				alert("error");
+			}
+		});
+	  } else {
+	    swal("Close", "Tidak Jadi", "error");
+		document.getElementById("lab1").checked = false;
+	  }
+	});
+}
+
+function rad_enable(){
+    jadwal_rujuk = document.getElementById('date_picker').value;
+	// alert(jadwal_lab);
+	swal({
+	  title: "Rujuk?",
+	  text: "Rujuk Penunjang Radiologi!",
+	  type: "warning",
+	  showCancelButton: true,
+  	  showLoaderOnConfirm: true,
+	  confirmButtonColor: "#DD6B55",
+	  confirmButtonText: "Ya!",
+	  cancelButtonText: "Tidak!",
+	  closeOnConfirm: false,
+	  closeOnCancel: false
+	},
+	function(isConfirm){
+	  if (isConfirm) {
+	    $.ajax({
+			type:'POST',
+			dataType: 'json',
+			url:"<?php echo base_url('irj/rjcpelayanan/update_rujukan_penunjang_2')?>",
+			data: {
+				no_register: '<?php echo $no_register ?>',
+				jenis_rujuk: 'rad',
+				jadwal_rujuk: jadwal_rujuk,
+			},
+			success: function(data){
+				$('#rad_refresh').load(document.URL +' #rad_refresh');
+			    swal("Sukses!", "Rujuk selesai di pilih.", "success");
+	 			window.open('<?php echo site_url('rad/radcdaftar/pemeriksaan_rad'); echo "/".$no_register ?>','_blank');
+			},
+			error: function(){
+				alert("error");
+			}
+		});
+	  } else {
+	    swal("Close", "Tidak Jadi", "error");
+		document.getElementById("rad1").checked = false;
+	  }
+	});
+}
+
+/*function pa_enable(){
+    jadwal_rujuk = document.getElementById('date_picker').value;
+	// alert(jadwal_lab);
+	swal({
+	  title: "Rujuk?",
+	  text: "Rujuk Penunjang Patologi Anatomi!",
+	  type: "warning",
+	  showCancelButton: true,
+  	  showLoaderOnConfirm: true,
+	  confirmButtonColor: "#DD6B55",
+	  confirmButtonText: "Ya!",
+	  cancelButtonText: "Tidak!",
+	  closeOnConfirm: false,
+	  closeOnCancel: false
+	},
+	function(isConfirm){
+	  if (isConfirm) {
+	    $.ajax({
+			type:'POST',
+			dataType: 'json',
+			url:"<?php echo base_url('irj/rjcpelayanan/update_rujukan_penunjang_2')?>",
+			data: {
+				no_register: '<?php echo $no_register ?>',
+				jenis_rujuk: 'pa',
+				jadwal_rujuk: jadwal_rujuk,
+			},
+			success: function(data){
+				$('#pa_refresh').load(document.URL +' #pa_refresh');
+			    swal("Sukses!", "Rujuk selesai di pilih.", "success");
+	 			window.open('<?php echo site_url('pa/pacdaftar/pemeriksaan_pa'); echo "/".$no_register ?>','_blank');
+			},
+			error: function(){
+				alert("error");
+			}
+		});
+	  } else {
+	    swal("Close", "Tidak Jadi", "error");
+		document.getElementById("pa1").checked = false;
+	  }
+	});
+}*/
+
+function pilih_ket_pulang(ket_plg){
+	if(ket_plg=='PULANG'){
+		$('#div_tgl_kontrol').show();
+		$('#div_rujuk_penunjang').hide();
+		$('#dirujuk_rj_ke_poli').hide();
+		$('#pilih_dokter').hide();
+		document.getElementById("btn_simpan").value = 'Simpan';
+	} else {
+		$('#div_tgl_kontrol').hide();
+		$('#div_rujuk_penunjang').hide();
+		if(ket_plg=='DIRUJUK_RAWATJALAN'){
+			$('#dirujuk_rj_ke_poli').show();
+			$('#pilih_dokter').show();
+			document.getElementById("id_poli_rujuk").required = true;
+			document.getElementById("id_dokter_rujuk").required = true;
+			$('#div_tgl_kontrol').hide();
+		}else{
+			$('#dirujuk_rj_ke_poli').hide();
+			$('#pilih_dokter').hide();
+			document.getElementById("id_poli_rujuk").required = false;
+			document.getElementById("id_dokter_rujuk").required = false;
+			//document.getElementById("btn_simpan").value = 'Simpan';
+		}
+	}
+}
+
+function buatajax(){
+    if (window.XMLHttpRequest){
+    return new XMLHttpRequest();
+    }
+    if (window.ActiveXObject){
+    return new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    return null;
+}
+
+function ajaxdokter(id_poli){
+    ajaxku = buatajax();
+    var url="<?php echo site_url('irj/rjcregistrasi/data_dokter_poli'); ?>";
+    url=url+"/"+id_poli;
+    url=url+"/"+Math.random();
+    ajaxku.onreadystatechange=stateChangedDokter;
+    ajaxku.open("GET",url,true);
+    ajaxku.send(null);
+}
+
+var ajaxku;
+function stateChangedDokter(){
+    var data;
+	//alert(ajaxku.responseText);
+    if (ajaxku.readyState==4){
+		data=ajaxku.responseText;
+		if(data.length>=0){
+			document.getElementById("id_dokter_rujuk").innerHTML = data;
+		}
+    }
+	
+}
+
+</script>
+	<section class="content-header">
+		<div class="row">
+				<?php
+					// print_r($data_pasien);
+					//foreach($data_pasien_daftar_ulang as $row){
+				?>
+			<div class="col-sm-5">
+				<div class="panel panel-default">
+					<div class="panel-heading" align="center">Data Pasien</div>
+					<div class="panel-body"><br/>
+						<div class="form-inline"><div class="row">
+						
+						<div class="col-sm-4"><img height="100px" class="img-rounded" src="<?php 
+							if($data_pasien_daftar_ulang->foto==''){
+								echo site_url("upload/photo/unknown.png");
+							}else{
+								echo site_url("upload/photo/".$data_pasien_daftar_ulang->foto);
+							}
+							?>"></div>
+						<table class="table-sm table-striped" style="font-size:15">
+						  <tbody>
+						  	<tr>
+								<th style="color:green !important">No. Antrian</th>
+								<td>:&nbsp;</td>
+								<td style="color:green !important"><b><?php echo $data_pasien_daftar_ulang->no_antrian;?></b></td>
+							</tr>
+							<tr>
+								<th>No. MR</th>
+								<td>:&nbsp;</td>
+								<td><?php echo $data_pasien_daftar_ulang->no_cm;?></td>
+							</tr>
+							<tr>
+								<th>Nama</th>
+								<td>:&nbsp;</td>
+								<td><?php echo strtoupper($data_pasien_daftar_ulang->nama);?></td>
+							</tr>
+							<tr>
+								<th>No. Register</th>
+								<td>:&nbsp;</td>
+								<td><?php echo $no_register;?></td>
+							</tr>
+							<tr>
+								<th>Umur</th>
+								<td>:&nbsp;</td>
+								<td><?php echo $data_pasien_daftar_ulang->umurrj.' Thn '.$data_pasien_daftar_ulang->ublnrj.' Bln '.$data_pasien_daftar_ulang->uharirj.' Hr';?></td>
+							</tr>
+							<tr>
+								<th>Gol Darah</th>
+								<td>:&nbsp;</td>
+								<td><?php echo $data_pasien_daftar_ulang->goldarah;?></td>
+							</tr>
+							<tr>
+								<th>Tanggal Kunjungan</th>
+								<td>:&nbsp;</td>
+								<td><?php echo date('d-m-Y',strtotime($data_pasien_daftar_ulang->tgl_kunjungan)).' | '.date('H:i:s',strtotime($data_pasien_daftar_ulang->tgl_kunjungan));?></td>
+							</tr>
+							<tr>
+								<th>Kelas</th>
+								<td>:&nbsp;</td>
+								<td><?php echo $kelas_pasien;?></td>
+							</tr>
+							<tr>
+								<th>Cara Bayar</th>
+								<td>:&nbsp;</td>
+								<th><?php echo $data_pasien_daftar_ulang->cara_bayar;?></th>
+							</tr>	
+							<tr>
+								<?php if($data_pasien_daftar_ulang->nm_dokter==null){ 
+									echo form_open('irj/rjcpelayanan/update_dokter_pj'); ?>							
+								<th>Dokter</th>
+								<td>:&nbsp;</td>
+								<th></th>
+								</tr>
+								<th colspan="3">
+									<div class="form-inline">
+									<select id="id_dokter_pj" class="form-control" name="id_dokter_pj">
+										<option value="">-Pilih Dokter Yang Memeriksa-</option>
+										<?php foreach($dokter_tindakan as $row){
+										echo '<option value="'.$row->id_dokter.'">'.$row->nm_dokter.'</option>';
+										}
+										?>
+									</select>
+									<input type="hidden" class="form-control" value="<?php echo $no_register;?>" name="no_register">	
+									<input type="hidden" class="form-control" value="<?php echo $id_poli;?>" name="id_poli_dokter">							
+									<input type="submit" class="btn btn-sm btn-primary" id="button_simpan_dokter" value="Simpan">
+								</th>
+								<?php echo form_close();}else{ ?>
+								<th>Dokter</th>
+								<td>:&nbsp;</td>
+								<th><?php echo $data_pasien_daftar_ulang->nm_dokter;?></th>
+								<?php } ?>
+							</tr>							
+						  </tbody>
+						</table>
+			</div></div>
+					<br/>
+					<span class="input-group-btn">
+						<a type="button" class="btn btn-success pull-right" href="<?php echo site_url()."medrec/Rme/histori/".$data_pasien_daftar_ulang->no_cm;?>" target="_blank"><i class="fa fa-binoculars">&nbsp; Rekam Medik</i> </a>
+					</span>
+			</div>
+			</div>
+			</div>
+			<div class="col-sm-7">
+				<div class="panel panel-default">
+					<div class="panel-heading" align="center">Status Pulang</div>
+					<div class="panel-body">
+					<br/>
+						<?php echo form_open('irj/rjcpelayanan/update_pulang'); ?>
+							
+							<div class="form-group row">
+								<p class="col-sm-4 form-control-label" id="lbl_ket_pulang">MRS</p>
+									<div class="col-sm-8">
+										<div class="form-inline">
+											<div class="form-group">
+												<select class="form-control" name="ket_pulang" id="ket_pulang" onchange="pilih_ket_pulang(this.value)" required>
+													<option value="">-Pilih Ket Pulang-</option>
+													<option value="PULANG">Pulang</option>					
+													<option value="DIRUJUK_RAWATJALAN">Dirujuk Rawat Jalan</option>
+													<option value="DIRUJUK_RAWATINAP">Dirujuk Rawat Inap</option>
+													<option value="DIRUJUK_RS">Dirujuk ke RS Lain</option>
+													<option value="MENINGGAL">Meninggal</option>
+												</select>
+											</div>
+										</div>
+									</div>
+							</div>
+							<div class="form-group row" id="dirujuk_rj_ke_poli">
+								<p class="col-sm-4 form-control-label label-sm" id="dirujuk_ke"></p>
+									<div class="col-sm-8">
+											Dirujuk Ke:
+											<div class="form-inline">
+													<select id="id_poli_rujuk" class="form-control" name="id_poli_rujuk" onchange="ajaxdokter(this.value)">
+														<option value="">-Pilih Nama Poli-</option>
+														<?php 
+														foreach($poliklinik as $row){
+															echo '<option value="'.$row->id_poli.'">'.$row->nm_poli.'</option>';
+														}
+														?>
+													</select>
+												
+											</div>
+											<!--
+											<input type="search" style="width:300px" class="auto_search_poli form-control input-sm" id="nm_poli" placeholder="Nama Poli">
+											
+											<div class="form-inline">
+											ID Poli : <input type="text" size="8" class="form-control input-sm" placeholder="" id="id_poli" readonly name="id_poli_rujuk">
+											Ruang : <input type="text" size="8" class="form-control input-sm" placeholder="" id="kd_ruang" readonly name="kd_ruang_rujuk">
+											</div>
+											-->
+									</div>
+							</div>
+							<div class="form-group row" id="pilih_dokter">
+								<p class="col-sm-4 form-control-label label-sm"></p>
+									<div class="col-sm-8">
+											Dokter:
+											<div class="form-inline">
+													<select id="id_dokter_rujuk" class="form-control" name="id_dokter_rujuk">
+														<option value="">-Pilih Dokter-</option>
+														<?php 
+														foreach($dokter as $row){
+															echo '<option value="'.$row->id_dokter.'">'.$row->nm_dokter.'</option>';
+														}
+														?>
+													</select>
+												
+											</div>
+											
+									</div>
+							</div>
+							<div class="form-group row" id="div_tgl_kontrol">
+								<p class="col-sm-4 form-control-label" id="lbl_tgl_kontrol">Tanggal Kontrol</p>
+									<div class="col-sm-8">
+										<div class="form-inline">
+											<div class="form-group">
+												<input type="text" id="date_picker" class="form-control" placeholder="yyyy-mm-dd" name="tgl_kontrol">
+											</div>
+										</div>
+									</div>
+							</div>
+							<?php //tampilkan jika poli penyakit dalam BQ00
+								// if ($id_poli=='BQ00'){
+							?>
+							<div class="form-group row" id="div_rujuk_penunjang">
+								<p class="col-sm-3 form-control-label" id="lbl_tgl_kontrol">Rujuk Penunjang</p>
+								<div class="col-sm-9">
+									<div class="form-group col-sm-6">
+										<div id="ok_refresh">
+											<label class="checkbox-inline">
+												<?php 
+												if($rujukan_penunjang->ok=='1'){
+													if($rujukan_penunjang->status_ok=='0'){
+														echo '<input type="checkbox" id="ok1" name="ok1" value=null unchecked disabled> Operasi<br>belum selesai.';
+													} else if($rujukan_penunjang->status_ok=='1'){
+														echo '<input type="checkbox" id="ok1" name="ok1" value=null checked disabled> Operasi';
+													} else {
+														echo '<input type="checkbox" id="ok1" name="ok1" value="2" onclick=ok_enable()> Operasi';
+													}
+												}else { 
+													echo '<input type="checkbox" id="ok1" name="ok1" value="2" onclick=ok_enable()> Operasi';
+												}
+												?>										  
+											</label>
+										</div>
+									</div>
+									<!--<div class="form-group col-sm-6">
+										<div id="pa_refresh">
+											<label class="checkbox-inline">
+												<?php 
+												/*if($rujukan_penunjang->pa=='1'){
+													if($rujukan_penunjang->status_pa=='0'){
+														echo '<input type="checkbox" id="pa1" name="pa1" value=null unchecked disabled> Patologi Anatomi<br>belum selesai.';
+													} else if($rujukan_penunjang->status_pa=='1'){
+														echo '<input type="checkbox" id="pa1" name="pa1" value=null checked disabled> Patologi Anatomi | <a href="'.base_url('pa/pacdaftar/pemeriksaan_pa').'/'.$no_register.'" target="_blank">Progress</a>';
+													} else {
+														echo '<input type="checkbox" id="pa1" name="pa1" value="2" onclick=pa_enable()> Patologi Anatomi';
+													}
+												}else { 
+													echo '<input type="checkbox" id="pa1" name="pa1" value="2" onclick=pa_enable()> Patologi Anatomi';
+												}*/
+												?>										  
+											</label>
+										</div>
+									</div>-->
+									<div class="form-group col-sm-6">
+										<div id="lab_refresh">
+											<label class="checkbox-inline">
+												<?php 
+												if($rujukan_penunjang->lab=='1'){
+													if($rujukan_penunjang->status_lab=='0'){
+														echo '<input type="checkbox" id="lab1" name="lab1" value=null unchecked disabled> Laboratorium<br>belum selesai.';
+													} else if($rujukan_penunjang->status_lab=='1'){
+														echo '<input type="checkbox" id="lab1" name="lab1" value=null checked disabled> Laboratorium | <a href="'.base_url('lab/labcdaftar/pemeriksaan_lab').'/'.$no_register.'" target="_blank">Progress</a>';
+													} else {
+														echo '<input type="checkbox" id="lab1" name="lab1" value="2" onclick=lab_enable()> Laboratorium';
+													}
+												}else { 
+													echo '<input type="checkbox" id="lab1" name="lab1" value="2" onclick=lab_enable()> Laboratorium';
+												}
+												?>										  
+											</label>
+										</div>
+									</div>
+									<div class="form-group col-sm-6">
+										<div id="rad_refresh">
+											<label class="checkbox-inline">
+												<?php 
+												if($rujukan_penunjang->rad=='1'){
+													if($rujukan_penunjang->status_rad=='0'){
+														echo '<input type="checkbox" id="rad2" name="rad2" value=null unchecked disabled> Diagnostik<br>belum selesai.';
+													} else if($rujukan_penunjang->status_rad=='1'){
+														echo '<input type="checkbox" id="rad2" name="rad2" value=null checked disabled> Radiologi | <a href="'.base_url('rad/radcdaftar/pemeriksaan_rad').'/'.$no_register.'" target="_blank">Progress</a>';
+													} else {
+														echo '<input type="checkbox" id="rad2" name="rad2" value="2" onclick=rad_enable()> Diagnostik';
+													}
+												}else { 
+													echo '<input type="checkbox" id="rad2" name="rad2" value="2" onclick=rad_enable()> Diagnostik';
+												}
+												?>										  
+											</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							<?php //end = tampilkan jika poli penyakit dalam
+								// }
+							?>
+							<div class="form-group row">
+									<p class="col-sm-4 form-control-label" id="div_catatan">Catatan</p>
+									<div class="col-sm-8">
+									<textarea class="form-control" name="note_pulang" id="note_pulang" cols="25" rows="3" style="resize:vertical"></textarea>
+									</div>
+							</div>
+							<div class="form-inline" align="right">
+								<input type="hidden" class="form-control" value="<?php echo $id_poli;?>" name="id_poli">
+								<input type="hidden" class="form-control" value="<?php echo $no_register;?>" name="no_register">
+								<div class="form-group">
+									<button type="reset" class="btn bg-orange btn-sm">Reset</button>
+									<input type="submit" class="btn btn-primary btn-sm" id="btn_simpan" value="Simpan">
+								</div>
+							</div>
+						<?php echo form_close();?>
+					</div>
+				</div>
+				
+				<div class="panel panel-default">
+					<div class="panel-body">
+						<?php echo form_open('irj/rjcpelayanan/update_rujukan_penunjang'); ?>
+						<div class="form-group row">
+							<p class="col-sm-12 form-control-label" id="label_rujukan">Rujukan Penunjang :</p>
+							<div class="col-sm-12">
+								<div class="form-inline">
+									<div class="form-group col-sm-6">
+										<label class="checkbox-inline">
+											<?php 
+											if($rujukan_penunjang->ok=='1'){
+												if($rujukan_penunjang->status_ok=='0'){
+													echo '<input type="checkbox" id="ok" name="ok" value=null checked disabled> Operasi'; //10
+												} else {
+													echo '<input type="checkbox" id="ok" name="ok" value=null checked disabled> Operasi | Done';
+												}
+											}else { 
+												if($rujukan_penunjang->status_ok=='0'){
+													echo '<input type="checkbox" id="ok" name="ok" value="1"> Operasi '; //00
+												} else {
+													echo '<input type="checkbox" id="ok" name="ok" value=null checked disabled> Operasi | Done';
+												}	
+											}?>										  
+										</label>
+									</div>
+									<!--<div class="form-group col-sm-6">
+										<label class="checkbox-inline">
+											<?php 
+											/*if($rujukan_penunjang->pa=='1'){
+												if($rujukan_penunjang->status_pa=='0'){
+													echo '<input type="checkbox" id="pa" name="pa" value=null checked disabled> Patologi Anatomi | <a href="'.base_url('pa/pacdaftar/pemeriksaan_pa').'/'.$no_register.'" target="_blank">Progress </a>'; //10
+												} else {
+													echo '<input type="checkbox" id="pa" name="pa" value=null checked disabled> Patologi Anatomi | Done';
+												}
+											}else { 
+												if($rujukan_penunjang->status_pa=='0'){
+													echo '<input type="checkbox" id="pa" name="pa" value="1"> Patologi Anatomi '; //00
+												} else {
+													echo '<input type="checkbox" id="pa" name="pa" value=null checked disabled> Patologi Anatomi | Done';
+												}	
+											}*/?>										  
+										</label>
+									</div>-->
+									<div class="form-group col-sm-6">
+										<label class="checkbox-inline">
+											<?php 
+											if($rujukan_penunjang->lab=='1'){
+												if($rujukan_penunjang->status_lab=='0'){
+													echo '<input type="checkbox" id="lab" name="lab" value=null checked disabled> Laboratorium | <a href="'.base_url('lab/labcdaftar/pemeriksaan_lab').'/'.$no_register.'" target="_blank">Progress </a>'; //10
+												} else {
+													echo '<input type="checkbox" id="lab" name="lab" value=null checked disabled> Laboratorium | Done';
+												}
+											}else { 
+												if($rujukan_penunjang->status_lab=='0'){
+													echo '<input type="checkbox" id="lab" name="lab" value="1"> Laboratorium '; //00
+												} else {
+													echo '<input type="checkbox" id="lab" name="lab" value=null checked disabled> Laboratorium | Done';
+												}	
+											}?>										  
+										</label>
+									</div>
+									<div class="form-group col-sm-6">
+										<label class="checkbox-inline">
+											<?php 
+											if($rujukan_penunjang->rad=='1'){
+												if($rujukan_penunjang->status_rad=='0'){
+													echo '<input type="checkbox" id="rad" name="rad" value=null checked disabled> Diagnostik | <a href="'.base_url('rad/radcdaftar/pemeriksaan_rad').'/'.$no_register.'" target="_blank">Progress </a>'; //10
+												} else {
+													echo '<input type="checkbox" id="rad" name="rad" value=null checked disabled> Diagnostik | Done';
+												}
+											}else { 
+												if($rujukan_penunjang->status_rad=='0'){
+													echo '<input type="checkbox" id="rad" name="rad" value="1"> Diagnostik '; //00
+												} else {
+													echo '<input type="checkbox" id="rad" name="rad" value=null checked disabled> Diagnostik | Done';
+												}	
+											}?>										  
+										</label>
+									</div>
+									<div class="form-group col-sm-6">
+										<label class="checkbox-inline">
+											<?php 
+											if($rujukan_penunjang->obat=='1'){
+												if($rujukan_penunjang->status_obat=='0'){
+													echo '<input type="checkbox" id="obat" name="obat" value=null checked disabled> Obat | <a href="'.base_url('farmasi/Frmcdaftar/permintaan_obat').'/'.$no_register.'" target="_blank">Progress </a>'; //10
+												} else {
+													echo '<input type="checkbox" id="obat" name="obat" value=null checked disabled> Obat | Done';
+												}
+											}else { 
+												if($rujukan_penunjang->status_obat=='0'){
+													echo '<input type="checkbox" id="obat" name="obat" value="1"> Obat '; //00
+												} else {
+													echo '<input type="checkbox" id="obat" name="obat" value=null checked disabled> Obat | Done';
+												}	
+											}?>											
+										</label>
+									</div>
+									<div class="form-group col-sm-6">
+										<label class="checkbox-inline">
+											<?php 
+											if($rujukan_penunjang->optik=='1'){
+												if($rujukan_penunjang->status_optik=='0'){
+													echo '<input type="checkbox" id="optik" name="optik" value=null checked disabled> Optik | <a href="'.base_url('farmasi/Frmcdaftar/permintaan_obat').'/'.$no_register.'/optik" target="_blank">Progress </a>'; //10
+												} else {
+													echo '<input type="checkbox" id="optik" name="optik" value=null checked disabled> Optik | Done';
+												}
+											}else { 
+												if($rujukan_penunjang->status_optik=='0'){
+													echo '<input type="checkbox" id="optik" name="optik" value="1"> Optik '; //00
+												} else {
+													echo '<input type="checkbox" id="optik" name="optik" value=null checked disabled> Optik | Done';
+												}	
+											}?>											
+										</label>
+									</div>
+								</div>
+							</div>
+							<div class="col-sm-12"  align="right">	
+
+								<input type="hidden" class="form-control" value="<?php echo $no_register;?>" name="no_register">
+								<input type="hidden" class="form-control" value="<?php echo $id_poli;?>" name="id_poli">
+								<input type="submit" class="btn btn-primary col-md-offset-1" id="button_simpan_rujukan" value="Simpan">
+							</div>
+						</div>			
+						<?php echo form_close();?>
+					</div>
+				</div> <!-- close panel checkbox -->				
+			</div>
+		</div>
+	</section>
+<?php
+	//$this->load->view('layout/footer.php');
+?>

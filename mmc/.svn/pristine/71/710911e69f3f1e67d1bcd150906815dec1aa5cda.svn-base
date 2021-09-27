@@ -1,0 +1,160 @@
+<?php
+  $this->load->view('layout/header.php');
+?>
+<script type='text/javascript'>
+//-----------------------------------------------Data Table
+$(document).ready(function() {
+    //document.getElementById('exceldown').href= "<?php echo base_url('logistik_farmasi/Frmcstok/exceldown/')?>";
+     $('#example').DataTable( {
+        initComplete: function () {
+            this.api().columns('.filter_gudang').every( function () {
+                var column = this;
+                var select = $('#select_gudang')
+                    // .appendTo( $(column.header()).empty() )
+                    .on( 'change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+ 
+                        column
+                            .search( val ? '^'+val+'$' : '', true, false )
+                            .draw();
+                    } );
+ 
+                column.data().unique().sort().each( function ( d, j ) {
+                    select.append( '<option value="'+d+'">'+d+'</option>' )
+                } );
+            } );
+        }
+    } );
+} );
+//---------------------------------------------------------
+
+
+  function detail_gudang(nm_gudang) {
+    $.ajax({
+      type:'POST',
+      dataType: 'json',
+      url:"<?php echo base_url('logistik_farmasi/Frmcdistribusi/get_data_detail_gudang')?>",
+      data: {
+        nm_gudang : nm_gudang
+      },
+      success: function(data){    
+        $('#edit_batch_no').val(data[0].batch_no);
+        $('#edit_description').val(data[0].nm_obat);
+        $('#edit_qty').val(data[0].qty);
+        $('#edit_expire_date').val(data[0].expire_date);
+      },
+      error: function(){
+        alert("error");
+      }
+    });
+  }
+
+  function setparam(gudang){
+    //alert(gudang);
+      
+  } 
+var site = "<?php echo site_url();?>";
+
+  function getexcel(){
+    var nm_gudang=document.getElementById('select_gudang').value;
+    window.open(site+'/logistik_farmasi/Frmcstok/exceldown/'+nm_gudang, "_blank");window.focus();
+    /*$.ajax({
+      type:'GET',
+      dataType: 'json',
+      url:"<?php echo base_url('logistik_farmasi/Frmcstok/exceldown')?>"+'/'+nm_gudang,      
+      success: function(data){    
+       
+      },
+      error: function(){
+        alert("error");
+      }
+    }); */
+  }
+
+$(function() {
+$('#date_picker').datepicker({
+    format: "yyyy-mm-dd",
+    endDate: '0',
+    autoclose: true,
+    todayHighlight: true,
+  });  
+    
+});
+
+
+    
+</script>
+
+<section class="content-header">
+  <?php
+    echo $this->session->flashdata('success_msg');
+  ?>
+</section>
+<section class="content">
+  <div class="row">
+    <div class="col-xs-12">
+      <div class="box">
+        <div class="box-header">
+          <h3 class="box-title">DAFTAR STOK BARANG</h3>
+        </div>
+        
+        <div class="box-body">
+        <div class="form-group row">
+           <p class="col-sm-2 form-control-label" id="lidgudang">Pilihan Gudang</p>
+             <div class="col-sm-3">
+                <select name="id_gudang" class="form-control js-example-basic-single" id="select_gudang" onchange="setparam(this.value)">
+                </select>
+                <a target="_blank" id="exceldown" onclick="getexcel()"><input type="button" class="btn 
+                  btn-primary" value="Download Excel"></a>
+             </div>
+        </div>
+          <table id="example" class="display" cellspacing="0" width="100%">
+              <thead>
+              <tr>
+                <th>No</th>
+                <th class="filter_gudang">Gudang</th>
+                <th>Batch Number</th>
+                <th>id_obat</th>
+                <th>Nama Obat</th>
+                <th>Quantity</th>
+                <th>Type</th>
+                <th>Expire Date</th> 
+              </tr>
+              </thead>
+
+              <tbody>
+              <?php
+              // print_r($pasien_daftar);
+                $i=1;
+                foreach($data_barang as $row){
+                $batch_no=$row->batch_no;
+              ?>
+                <tr>
+                  <td><?php echo $i++;?></td>
+                  <td><?php echo $row->nama_gudang;?></td>
+                  <td><?php echo $row->batch_no;?></td>
+                  <td><?php echo $row->id_obat;?></td>
+                  <td><?php echo $row->nm_obat;?></td>
+                  <td><?php echo $row->qty;?></td>
+                  <td><?php echo $row->jenis_barang;?></td>
+                  <td><?php echo $row->expire_date;?></td>
+                </tr>
+              <?php
+                }
+              ?>
+              </tbody>
+            </table>
+          <?php
+            //echo $this->session->flashdata('message_nodata'); 
+          ?>  
+
+          </div>              
+        </div>
+      </div>
+    </div>
+</section>
+<?php
+  $this->load->view('layout/footer.php');
+?>
